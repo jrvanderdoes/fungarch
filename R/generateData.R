@@ -23,8 +23,6 @@
 #'
 #' @export
 #'
-#' @importFrom MASS mvrnorm
-#'
 #' @details
 #' If \eqn{x_i(t)} follows an FARCH(1) process,\cr
 #' \eqn{x_i(t)=\sigma_i(t)\varepsilon_i(t)}, \eqn{t \in [0,1]},\cr
@@ -60,6 +58,7 @@ generateFunctionalCondVol <- function(resolution, N, type = 'garch',
            sim_sigma2_matrix <- sim_garch_matrix <-
              matrix(NA, resolution, NBurn)
            error_matrix <- .generateFunctionalIID(resolution = resolution, N = NBurn)
+           #error_matrix <- matrix(1,nrow = resolution, ncol = NBurn)
 
            if(is.null(alpha_par))
              alpha_par <- function(t,s){ 16 * t * (1-t) * s * (1-s) }
@@ -138,8 +137,6 @@ generateFunctionalCondVol <- function(resolution, N, type = 'garch',
 #' @return A (resolution) x (number of observations) matrix for iid sequences,
 #'  where the finite realization of curves are stored in columns.
 #' @export
-#'
-#' @importFrom MASS mvrnorm
 #'
 #' @details
 #' \eqn{x_i(t)=e^{-t/2}W_i(e^t)}, \eqn{t \in [0,1]},\cr
