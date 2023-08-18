@@ -22,7 +22,7 @@ vecARCH <- function(X, w=0.001,
   X <- .tensor(X) # Tensor product square
 
   # Lag-h Covariance operator estimates
-  #   Formula (3.6)
+  #   TODO:: UPDATE
   C_0 <- .estim_tensor_lag_cov(X)
   C_1 <- .estim_tensor_lag_cov(X, lag = 1)
 
@@ -34,7 +34,6 @@ vecARCH <- function(X, w=0.001,
 
   # Standardize Vectors in integral
   #   apply( eigval_C_0$vectors^2,MARGIN = 2,.approx_int)
-  ## TODO:: Would I want the tensor square to be 1 now?
   eigval_C_0$vectors <- eigval_C_0$vectors * sqrt(n)
 
   # Compute Projection
@@ -45,7 +44,7 @@ vecARCH <- function(X, w=0.001,
   }
 
   # Prep
-  I_H <- diag(n)
+  # I_H <- diag(n)
 
   # Define m2, (3.3)
   m2 <- 1 / N * rowSums(X^2)
@@ -53,25 +52,6 @@ vecARCH <- function(X, w=0.001,
   # Estimate alpha and delta
   error_plot <- NULL
   if(length(lambda)>1){
-    # optim_results <-
-    #   optim(0.1,function(lambda, X, N, C_0, C_1, projector, m2, I_H){
-    #     # Formula (3.26)
-    #     invMat <- solve( sqrt(N) * C_0 %*% C_0 + lambda * I_H )
-    #     #   Formula (4.8)
-    #     hat_alpha <- sqrt(N) * C_1 %*% C_0 %*% invMat %*% projector
-    #     #hat_alpha <- apply(hat_alpha,MARGIN = 2, function(x){pmax(0,x)})
-    #
-    #     # Estimate delta, (4.9)
-    #     hat_delta <- m2 - hat_alpha %*% m2
-    #     #hat_delta <- pmax(0,hat_delta)
-    #
-    #     # Compute Error
-    #     .computeError(X, hat_alpha, hat_delta)
-    #   },
-    # method="L-BFGS-B",
-    # lower=10^-7,upper=10,
-    # control = list('ndeps'=10^-6),
-    # X=X,N=N,C_0=C_0,C_1=C_1,projector=projector, m2=m2, I_H=I_H)
 
     lambda_result <- .findLambdaARCH(lambda,X=X,C_0=C_0,C_1=C_1,I_H=I_H,N=N,
                                      projector=projector,m2=m2)
@@ -143,9 +123,10 @@ vecARCH <- function(X, w=0.001,
 
   covMat <- matrix(0, nrow=nrow(X),ncol=nrow(X))
 
-  for(k in 1:(N-lag)){
+  # (34)
+  for(k in m:(N-lag)){
     covMat <- covMat + ( (X[,k]-m1) %*% t(X[,k+lag]-m1) )
   }
 
-  covMat /((N-lag)-1)
+  covMat /((N-abs(lag)))
 }

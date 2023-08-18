@@ -42,22 +42,17 @@
 #'             max(delta_true,est$hat_delta)),
 #'      type='l')
 #' lines(x=d,y=est$hat_delta, col='red')
-pointwiseARCH <- function(X, w=0.001,
-                          lambda=c(10^-7,10^-6,10^-5,10^-4,
-                                   seq(0.001,0.01,0.002),
-                                   seq(0.02,0.09,0.01),
-                                   seq(0.1,5,0.1),seq(6,20,1),
-                                   seq(22,50,2),
-                                   seq(60,100,10),seq(125,250,25),
-                                   seq(300,500,50))){
+pointwiseARCH <- function(X, w=0.001, lambda=NA){
+  #X <- X - rowMeans(X) # De-mean
   X <- X^2 # Pointwise square
+  #X <- X - rowMeans(X) # De-mean
   N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
 
   # Lag-h Covariance operator estimates
   #   Formula (3.6)
-  C_0 <- .estim_pointwise_lag_cov(X)
-  C_1 <- .estim_pointwise_lag_cov(X, lag = 1)
+  C_0 <- .estim_lag_cov(X)
+  C_1 <- .estim_lag_cov(X, lag = 1)
 
   eigval_C_0 <- eigen(C_0)
 
@@ -117,30 +112,6 @@ pointwiseARCH <- function(X, w=0.001,
                              'error_plot'=error_plot))
 }
 
-#' Title
-#'
-#' @param X
-#' @param lag
-#'
-#' @return
-#' @export
-#'
-#' @examples
-.estim_pointwise_lag_cov <- function(X, lag=0){
-  N <- ncol(X)
-
-  # TODO:: Confirm if use definition from (3.3) or after (3.6)?
-  m1 <- (1/(N-lag)) * rowSums(X[,1:(N-lag)])
-
-  covMat <- matrix(0, nrow=nrow(X),ncol=nrow(X))
-
-  for(k in 1:(N-lag)){
-    covMat <- covMat + ( (X[,k]-m1) %*% t(X[,k+lag]-m1) )
-  }
-
-  covMat /((N-lag)-1)
-}
-
 
 #' Title
 #'
@@ -162,13 +133,6 @@ pointwiseARCH <- function(X, w=0.001,
   for(i in 1:length(lambdas)){
     ests <- .estimateARCH(N=ncol(X), n=nrow(X), C_0=C_0, C_1=C_1,
                   lambda=lambdas[i], projector=projector, m2=m2)
-    # # Formula (3.26)
-    # invMat <- solve( sqrt(N) * C_0 %*% C_0 + lambdas[i] * I_H )
-    # #   Formula (4.8)
-    # hat_alpha <- sqrt(N) * C_1 %*% C_0 %*% invMat %*% projector
-    #
-    # # Estimate delta, (4.9)
-    # hat_delta <- m2 - (hat_alpha %*% m2) / nrow(X)
 
     errors[i] <- .computeError(X = X,
                                alpha = ests$hat_alpha,
@@ -228,71 +192,55 @@ pointwiseARCH <- function(X, w=0.001,
 #' @export
 #'
 #' @examples
-pointwiseGARCH <- function(X, w=0.001,
-                           lambda=c(10^-7,10^-6,10^-5,10^-4,
-                                    seq(0.001,0.01,0.002),
-                                    seq(0.02,0.09,0.01),
-                                    seq(0.1,5,0.1),seq(6,20,1),
-                                    seq(22,50,2),
-                                    seq(60,100,10),seq(125,250,25),
-                                    seq(300,500,50))){
+pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
+  #X <- X - rowMeans(X) # De-mean
   X <- X^2 # Pointwise square
+  #X <- X - rowMeans(X) # De-mean
   N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
 
-  # Lag-h Covariance operator estimates
-  #   Formula (3.6)
-  C_0 <- .estim_pointwise_lag_cov(X)
-  C_1 <- .estim_pointwise_lag_cov(X, lag = 1)
-
-  eigval_C_0 <- eigen(C_0)
-
-  # Select K Projections
-  #   Remark 3.2(c)
-  K <- which.min(cumsum(eigval_C_0$values)/sum(eigval_C_0$values) < 1-w)
-
-  # Standardize Vectors in integral
-  #   apply( eigval_C_0$vectors^2,MARGIN = 2,.approx_int)
-  eigval_C_0$vectors <- eigval_C_0$vectors * sqrt(n)
-
-  # Compute Projection
-  projector <- matrix(0, nrow=n, ncol=n)
-  for(i in 1:K){
-    projector <- projector +
-      ( eigval_C_0$vectors[,i] %*% t(eigval_C_0$vectors[,i]) )
-  }
-
-  # Prep
-  I_H <- diag(n)
-
-  # Define m2, (3.3)
-  m2 <- 1 / N * rowSums(X^2)
-
-  # Estimate alpha and delta
-  error_plot <- NULL
-  if(length(lambda)>1){
-    lambda_result <- .findLambdaGARCH(lambda,X=X,C_0=C_0,C_1=C_1,I_H=I_H,N=N,
-                                      projector=projector,m2=m2)
-    error_plot <- lambda_result$error_plot
-    lambda <- lambda_result$lambda
-  }
+  # # Lag-h Covariance operator estimates
+  # #   Formula (3.6)
+  # C_0 <- .estim_lag_cov(X)
+  # C_1 <- .estim_lag_cov(X, lag = 1)
+  #
+  # eigval_C_0 <- eigen(C_0)
+  #
+  # # Select K Projections, Remark 3.2(c)
+  # K <- which.min(cumsum(eigval_C_0$values)/sum(eigval_C_0$values) < 1-w)
+  #
+  # # Standardize Vectors in integral
+  # #   apply( eigval_C_0$vectors^2,MARGIN = 2,.approx_int)
+  # eigval_C_0$vectors <- eigval_C_0$vectors * sqrt(n)
+  #
+  # # Compute Projection
+  # projector <- matrix(0, nrow=n, ncol=n)
+  # for(i in 1:K){
+  #   projector <- projector +
+  #     ( eigval_C_0$vectors[,i] %*% t(eigval_C_0$vectors[,i]) )
+  # }
+  #
+  # # Define m2, (3.3)
+  # m2 <- 1 / N * rowSums(X^2)
 
   ## Estimate G_hat (3.9)
+  C <- list()
   for(l in 0:(L+1)){
-    C[[l+1]] <- .estim_pointwise_lag_cov(X,lag=l)
+    C[[l+1]] <- .estim_lag_cov(X,lag=l)
   }
-  GL_hat <- do.call("cbind",C[[-(L+1)]])
-  GL1_hat <- do.call("cbind",C[[-1]])
-  for(l in 2:L){
+  GL_hat <- do.call("cbind",C[-(L+1+1)])
+  GL1_hat <- do.call("cbind",C[-1])
+  for(l in 2:(L+1)){
     # Build row
-    row <- C[[l-1]]
-    row1 <- C[[l-2]]
-    for(i in 2:L){
-      row <- cbind(row,C[[abs(l-i)]])
-      row1 <- cbind(row1,C[[abs(l-i-1)]])
+    row <- t(C[[l-1+1]])
+    row1 <- t(C[[l-1+2]])
+    for(i in 2:(L+1)){
+      func <- ifelse(i<l,t,function(X){X})
+      row <- cbind(row,func(C[[abs(l-i)+1]]))
+      row1 <- cbind(row1,func(C[[abs(l-i)+2]]))
     }
     GL_hat <- rbind(GL_hat,row)
-    GL1_hat <- rbind(GL1_hat,row)
+    GL1_hat <- rbind(GL1_hat,row1)
   }
 
   # Projection
@@ -302,10 +250,10 @@ pointwiseGARCH <- function(X, w=0.001,
   #   Remark 3.2(c)
   K <- which.min(cumsum(eigval_GL$values)/sum(eigval_GL$values) < 1-w)
 
-  eigval_GL$vectors <- eigval_GL$vectors * sqrt(n) #TODO:: CHECK this is right
+  eigval_GL$vectors <- eigval_GL$vectors * sqrt(n) #TODO:: check
 
   # Compute Projection
-  projector_pi <- matrix(0, nrow=n, ncol=n)
+  projector_pi <- matrix(0, nrow=n*(L+1), ncol=n*(L+1))
   for(i in 1:K){
     projector_pi <- projector_pi +
       ( eigval_GL$vectors[,i] %*% t(eigval_GL$vectors[,i]) )
@@ -313,25 +261,39 @@ pointwiseGARCH <- function(X, w=0.001,
 
   ## Find lambda_pi
   # TODO::
+  lambda_pi <- 10
 
   ## Estimate Pis (3.42)
-  invMat_pi <- solve( sqrt(N) * GL_hat %*% GL_hat + lambda_pi * I_H )
+  invMat_pi <- solve( sqrt(N) * GL_hat %*% GL_hat +
+                        diag(lambda_pi,(L+1)*n,(L+1)*n) )
   pi_hat <- sqrt(N) * GL1_hat %*% GL_hat %*% invMat_pi %*% projector_pi
-  pi1 <- pi_hat[1:n,1:n]
-  pi2 <- pi_hat[n+1:n,n+1:n]
+  for(i in 0:L){
+    pis[[i]] <- pi_hat[1:n,i*n+1:n]
+  }
+  bigPI <- cbind(pi) #TODO:: SOLVE ME
 
-  #   Alpha / Beta (3.43)
-  hat_alpha <- pi1
+  ## Alpha (3.43)
+  hat_alpha <- pis[[1]]
 
   ## Find projector_beta
   # TODO::
+  eigval_pi <- eigen(pi_hat)
 
   ## Find lambda_beta
   # TODO::
 
+  ## Estimate Beta (3.39)/(3.43)
   invMat_beta <- solve( sqrt(N) * pi1 %*% pi1 + lambda_beta * I_H )
   hat_beta <- sqrt(N) * pi2 %*% pi1 %*% invMat_beta %*% projector_beta
 
+  # Estimate alpha and delta
+  # error_plot <- NULL
+  # if(length(lambda)>1){
+  #   lambda_result <- .findLambdaGARCH(lambda,X=X,C_0=C_0,C_1=C_1,#I_H=I_H,N=N,
+  #                                     projector=projector,m2=m2)
+  #   error_plot <- lambda_result$error_plot
+  #   lambda <- lambda_result$lambda
+  # }
 
   # Estimate delta, (3.30)
   hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
