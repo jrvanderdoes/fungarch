@@ -1,9 +1,9 @@
 Package: fungarch
-Title: What the Package Does (One Line, Title Case)
+Title: Functional Data GARCH Estimation
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person("Jeremy", "VanderDoes", , "jeremy.vanderdoes@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0009-0001-9885-3073"))
 Description: What the package does (one paragraph).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
