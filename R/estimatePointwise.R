@@ -225,12 +225,12 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
 
   ## Estimate G_hat (3.9)
   C <- list()
-  for(l in 0:(L+1)){
+  for(l in 0:L){
     C[[l+1]] <- .estim_lag_cov(X,lag=l)
   }
-  GL_hat <- do.call("cbind",C[-(L+1+1)])
+  GL_hat <- do.call("cbind",C[-(L+1)])
   GL1_hat <- do.call("cbind",C[-1])
-  for(l in 2:(L+1)){
+  for(l in 2:L){
     # Build row
     row <- t(C[[l-1+1]])
     row1 <- t(C[[l-1+2]])
@@ -253,11 +253,14 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   eigval_GL$vectors <- eigval_GL$vectors * sqrt(n) #TODO:: check
 
   # Compute Projection
-  projector_pi <- matrix(0, nrow=n*(L+1), ncol=n*(L+1))
+  projector_pi <- matrix(0, nrow=n*L, ncol=n*L)
   for(i in 1:K){
     projector_pi <- projector_pi +
       ( eigval_GL$vectors[,i] %*% t(eigval_GL$vectors[,i]) )
   }
+
+  # Two param optimization, lambda-pi and lambda_beta
+  #optim_results <- optim(c(1000,1000),fn = function(){})
 
   ## Find lambda_pi
   # TODO::
