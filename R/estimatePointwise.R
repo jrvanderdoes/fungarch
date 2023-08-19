@@ -259,47 +259,9 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
       ( eigval_GL$vectors[,i] %*% t(eigval_GL$vectors[,i]) )
   }
 
-  # Two param optimization, lambda-pi and lambda_beta
-  #optim_results <- optim(c(1000,1000),fn = function(){})
+  # Two param optimization, lambda_pi and lambda_beta
+  #optim_results <- optim(c(1000,1000),fn = function(lambdas){.estimateGARCH()})
 
-  ## Find lambda_pi
-  # TODO::
-  lambda_pi <- 10
-
-  ## Estimate Pis (3.42)
-  invMat_pi <- solve( sqrt(N) * GL_hat %*% GL_hat +
-                        diag(lambda_pi,(L+1)*n,(L+1)*n) )
-  pi_hat <- sqrt(N) * GL1_hat %*% GL_hat %*% invMat_pi %*% projector_pi
-  for(i in 0:L){
-    pis[[i]] <- pi_hat[1:n,i*n+1:n]
-  }
-  bigPI <- cbind(pi) #TODO:: SOLVE ME
-
-  ## Alpha (3.43)
-  hat_alpha <- pis[[1]]
-
-  ## Find projector_beta
-  # TODO::
-  eigval_pi <- eigen(pi_hat)
-
-  ## Find lambda_beta
-  # TODO::
-
-  ## Estimate Beta (3.39)/(3.43)
-  invMat_beta <- solve( sqrt(N) * pi1 %*% pi1 + lambda_beta * I_H )
-  hat_beta <- sqrt(N) * pi2 %*% pi1 %*% invMat_beta %*% projector_beta
-
-  # Estimate alpha and delta
-  # error_plot <- NULL
-  # if(length(lambda)>1){
-  #   lambda_result <- .findLambdaGARCH(lambda,X=X,C_0=C_0,C_1=C_1,#I_H=I_H,N=N,
-  #                                     projector=projector,m2=m2)
-  #   error_plot <- lambda_result$error_plot
-  #   lambda <- lambda_result$lambda
-  # }
-
-  # Estimate delta, (3.30)
-  hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
 
   list('hat_alpha'=hat_alpha,
        'hat_beta'=hat_beta,
@@ -352,4 +314,56 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
     ggplot2::theme_bw()
   list('lambda'=lambdas[which.min(errors)],
        'error_plot'= tmp)
+}
+
+
+
+#' Title
+#'
+#' @param lambda_pi
+#' @param lambda_beta
+#' @param GL_hat
+#' @param GL1_hat
+#' @param projector_pi
+#' @param projector_beta
+#' @param N
+#' @param n
+#'
+#' @return
+#' @export
+#'
+#' @examples
+.estimateGARCH <- function(lambda_pi, lambda_beta,
+                           GL_hat, GL1_hat,
+                           projector_pi, projector_beta,
+                           N, n){
+  ## Estimate Pis (3.42)
+  invMat_pi <- solve( sqrt(N) * GL_hat %*% GL_hat +
+                        diag(lambda_pi,L*n,L*n) )
+  pi_hat <- sqrt(N) * GL1_hat %*% GL_hat %*% invMat_pi %*% projector_pi
+  for(i in 0:L){
+    pis[[i]] <- pi_hat[1:n,i*n+1:n]
+  }
+  # Formula (3.41)
+  #   Discuss
+  bigPI <- pis[[1]]
+
+
+  ## Alpha (3.43)
+  hat_alpha <- pis[[1]]
+
+  ## Find projector_beta
+  eigval_pi <- eigen(pi_hat)
+
+  ## Estimate Beta (3.39)/(3.43)
+  invMat_beta <- solve( sqrt(N) * pis[[1]] %*% pis[[1]] + diag(lambda_beta, n, n) )
+  hat_beta <- sqrt(N) * pis[[2]] %*% pis[[1]] %*% invMat_beta %*% projector_beta
+
+
+  # Estimate delta, (3.30)
+  hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
+
+  list('hat_alpha'=hat_alpha,
+       'hat_beta'=hat_beta,
+       'hat_delta'=hat_delta)
 }
