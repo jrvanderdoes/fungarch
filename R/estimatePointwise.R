@@ -88,7 +88,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
         ests <- .estimateARCH(N=N, n=n, C_0=C_0, C_1=C_1,
                               lambda=lambda, projector=projector, m2=m2)
 
-        .computeError(X = X, alpha = ests$hat_alpha, delta = ests$hat_delta)
+        .computeARCHError(X = X, alpha = ests$hat_alpha, delta = ests$hat_delta)
       },
       method="Brent",
       lower=10^-7,upper=500000,
@@ -134,7 +134,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
     ests <- .estimateARCH(N=ncol(X), n=nrow(X), C_0=C_0, C_1=C_1,
                   lambda=lambdas[i], projector=projector, m2=m2)
 
-    errors[i] <- .computeError(X = X,
+    errors[i] <- .computeARCHError(X = X,
                                alpha = ests$hat_alpha,
                                delta = ests$hat_delta)
   }
@@ -220,8 +220,8 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   #     ( eigval_C_0$vectors[,i] %*% t(eigval_C_0$vectors[,i]) )
   # }
   #
-  # # Define m2, (3.3)
-  # m2 <- 1 / N * rowSums(X^2)
+  # Define m2, (3.3)
+  m2 <- 1 / N * rowSums(X^2)
 
   ## Estimate G_hat (3.9)
   C <- list()
@@ -234,7 +234,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
     # Build row
     row <- t(C[[l-1+1]])
     row1 <- t(C[[l-1+2]])
-    for(i in 2:(L+1)){
+    for(i in 2:L){
       func <- ifelse(i<l,t,function(X){X})
       row <- cbind(row,func(C[[abs(l-i)+1]]))
       row1 <- cbind(row1,func(C[[abs(l-i)+2]]))
@@ -260,12 +260,21 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   }
 
   # Two param optimization, lambda_pi and lambda_beta
-  #optim_results <- optim(c(1000,1000),fn = function(lambdas){.estimateGARCH()})
+  optim_results <- optim(c(1000,1000),
+                         fn = function(lambdas){
+                           ests <- .estimateGARCH()
+                           .computeGARCHError(X = X, alpha = ests$hat_alpha,
+                                         beta = ests$hat_beta,
+                                         delta = ests$hat_delta)})
 
+  ests <- .estimateGARCH(optim_results$par[1], optim_results$par[2],
+                         GL_hat, GL1_hat,
+                         projector_pi, projector_beta,
+                         N, n, m2)
 
-  list('hat_alpha'=hat_alpha,
-       'hat_beta'=hat_beta,
-       'hat_delta'=hat_delta,
+  list('hat_alpha'=ests$hat_alpha,
+       'hat_beta'=ests$hat_beta,
+       'hat_delta'=ests$hat_delta,
        'fitting_params'=list('lambda'=lambda,
                              'C_0'=C_0, 'C_1'=C_1,
                              'invMat'=invMat,
@@ -274,48 +283,6 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
                              'projector'=projector,
                              'error_plot'=error_plot))
 }
-
-
-
-#' Title
-#'
-#' @param lambdas
-#' @param X
-#' @param C_0
-#' @param C_1
-#' @param I_H
-#' @param N
-#' @param projector
-#' @param m2
-#'
-#' @return
-#' @export
-#'
-#' @examples
-.findLambdaGARCH <- function(lambdas,X,C_0,C_1,I_H,N,projector,m2){
-  errors <- rep(NA,length(lambdas))
-
-  for(i in 1:length(lambdas)){
-    # Formula (3.26)
-    invMat <- solve( sqrt(N) * C_0 %*% C_0 + lambdas[i] * I_H )
-    #   Formula (4.8)
-    hat_alpha <- sqrt(N) * C_1 %*% C_0 %*% invMat %*% projector
-
-    # Estimate delta, (4.9)
-    hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / nrow(X)
-
-    errors[i] <- .computeError(X = X, alpha = hat_alpha, delta = hat_delta)
-  }
-
-  tmp <- ggplot2::ggplot() +
-    ggplot2::geom_point(ggplot2::aes(lambdas,errors)) +
-    ggplot2::scale_x_log10() +
-    ggplot2::scale_y_log10() +
-    ggplot2::theme_bw()
-  list('lambda'=lambdas[which.min(errors)],
-       'error_plot'= tmp)
-}
-
 
 
 #' Title
@@ -336,7 +303,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
 .estimateGARCH <- function(lambda_pi, lambda_beta,
                            GL_hat, GL1_hat,
                            projector_pi, projector_beta,
-                           N, n){
+                           N, n, m2){
   ## Estimate Pis (3.42)
   invMat_pi <- solve( sqrt(N) * GL_hat %*% GL_hat +
                         diag(lambda_pi,L*n,L*n) )
@@ -347,6 +314,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   # Formula (3.41)
   #   Discuss
   bigPI <- pis[[1]]
+  boldPI <- pis[[1]]
 
 
   ## Alpha (3.43)
@@ -355,10 +323,19 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   ## Find projector_beta
   eigval_pi <- eigen(pi_hat)
 
-  ## Estimate Beta (3.39)/(3.43)
-  invMat_beta <- solve( sqrt(N) * pis[[1]] %*% pis[[1]] + diag(lambda_beta, n, n) )
-  hat_beta <- sqrt(N) * pis[[2]] %*% pis[[1]] %*% invMat_beta %*% projector_beta
+  projector_beta <- matrix(0, nrow=n*L, ncol=n*L)
+  for(i in 1:K){
+    projector_beta <- projector_beta +
+      ( eigval_pi$vectors[,i] %*% t(eigval_pi$vectors[,i]) )
+  }
 
+
+  ## Estimate Beta (3.39)/(3.43)
+  #   Ask pi^*?
+  invMat_beta <- solve( sqrt(N) * bigPI %*% bigPI +
+                          diag(lambda_beta, n, n) )
+  hat_beta <- sqrt(N) * boldPI %*% bigPI %*%
+    invMat_beta %*% projector_beta
 
   # Estimate delta, (3.30)
   hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
