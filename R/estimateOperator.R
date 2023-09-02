@@ -8,18 +8,12 @@
 #' @export
 #'
 #' @examples
-vecARCH <- function(X, w=0.001,
-                    lambda=c(10^-7,10^-6,10^-5,10^-4,
-                             seq(0.001,0.01,0.002),
-                             seq(0.02,0.09,0.01),
-                             seq(0.1,5,0.1),seq(6,20,1),
-                             seq(22,50,2),
-                             seq(60,100,10),seq(125,250,25),
-                             seq(300,500,50))){
-
+vecARCH <- function(X, w=0.001, lambda=NA){
+  #X <- X - rowMeans(X) # De-mean
+  X <- X^2 # Pointwise square
+  #X <- X - rowMeans(X) # De-mean
   N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
-  X <- .tensor(X) # Tensor product square
 
   # Lag-h Covariance operator estimates
   C_0 <- .estim_lag_cov(X)
@@ -43,36 +37,39 @@ vecARCH <- function(X, w=0.001,
   }
 
   # Define m2, (3.3)
-  m2 <- 1 / N * rowSums(X^2)
+  m2 <- 1 / N * rowSums(.tensor(X))
 
   # Estimate alpha and delta
   error_plot <- NULL
-  if(length(lambda)>1){
+  if(is.na(lambda)){
+    optim_results <-
+      optim(10000,function(lambda, X, N, n, C_0, C_1, projector, m2){
 
-    lambda_result <- .findLambdaARCH(lambda,X=X,C_0=C_0,C_1=C_1,I_H=I_H,N=N,
-                                     projector=projector,m2=m2)
-    error_plot <- lambda_result$error_plot
-    lambda <- lambda_result$lambda
+        ests <- .estimateARCH(N=N, n=n, C_0=C_0, C_1=C_1,
+                              lambda=lambda, projector=projector, m2=m2)
+
+        .computeARCHError(X = X, alpha = ests$hat_alpha, delta = ests$hat_delta)
+      },
+      method="Brent",
+      lower=10^-7,upper=500000,
+      X=X,N=N,n=n,C_0=C_0,C_1=C_1,projector=projector,m2=m2)
+
+    lambda <- optim_results$par
   }
 
+  ests <- .estimateARCH(N=N, n=n, C_0=C_0, C_1=C_1,
+                        lambda=lambda, projector=projector, m2=m2)
 
-  # Formula (3.26)
-  invMat <- solve( sqrt(N) * C_0 %*% C_0 + diag(lambda,n,n) )
-  #   Formula (4.8)
-  hat_alpha <- sqrt(N) * C_1 %*% C_0 %*% invMat %*% projector
-
-  # Estimate delta, (4.9)
-  hat_delta <- m2 - hat_alpha %*% m2
-
-  list('hat_alpha'=hat_alpha,
-       'hat_delta'=hat_delta,
+  list('hat_alpha'=ests$hat_alpha,
+       'hat_delta'=ests$hat_delta,
+       'estimate'=.predictARCH(X2=X, alpha=ests$hat_alpha,
+                               delta=ests$hat_delta, est_sqr=FALSE),
        'fitting_params'=list('lambda'=lambda,
                              'C_0'=C_0, 'C_1'=C_1,
-                             'invMat'=invMat,
                              'eigval_C_0'=eigval_C_0,
                              'K'=K,
                              'projector'=projector,
-                             'error_plot'=error_plot))
+                             'error_plot'=error_plot) )
 }
 
 
@@ -108,30 +105,4 @@ vecARCH <- function(X, w=0.001,
   }
 
   result
-}
-
-
-#' Title
-#'
-#' @param X
-#' @param lag
-#'
-#' @return
-#' @export
-#'
-#' @examples
-.estim_tensor_lag_cov <- function(X, lag=0){
-  N <- ncol(X)
-
-  # TODO:: Confirm if use definition from (3.3) or after (3.6)?
-  m1 <- (1/(N-lag)) * rowSums(X[,1:(N-lag)])
-
-  covMat <- matrix(0, nrow=nrow(X),ncol=nrow(X))
-
-  # (34)
-  for(k in m:(N-lag)){
-    covMat <- covMat + ( (X[,k]-m1) %*% t(X[,k+lag]-m1) )
-  }
-
-  covMat /((N-abs(lag)))
 }
