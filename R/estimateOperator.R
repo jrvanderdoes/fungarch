@@ -22,9 +22,8 @@ vecARCH <- function(X, w=0.001,
   X <- .tensor(X) # Tensor product square
 
   # Lag-h Covariance operator estimates
-  #   TODO:: UPDATE
-  C_0 <- .estim_tensor_lag_cov(X)
-  C_1 <- .estim_tensor_lag_cov(X, lag = 1)
+  C_0 <- .estim_lag_cov(X)
+  C_1 <- .estim_lag_cov(X, lag = 1)
 
   eigval_C_0 <- eigen(C_0)
 
@@ -43,9 +42,6 @@ vecARCH <- function(X, w=0.001,
       ( eigval_C_0$vectors[,i] %*% t(eigval_C_0$vectors[,i]) )
   }
 
-  # Prep
-  # I_H <- diag(n)
-
   # Define m2, (3.3)
   m2 <- 1 / N * rowSums(X^2)
 
@@ -61,14 +57,12 @@ vecARCH <- function(X, w=0.001,
 
 
   # Formula (3.26)
-  invMat <- solve( sqrt(N) * C_0 %*% C_0 + lambda * I_H )
+  invMat <- solve( sqrt(N) * C_0 %*% C_0 + diag(lambda,n,n) )
   #   Formula (4.8)
   hat_alpha <- sqrt(N) * C_1 %*% C_0 %*% invMat %*% projector
-  #hat_alpha <- apply(hat_alpha,MARGIN = 2, function(x){pmax(0,x)})
 
   # Estimate delta, (4.9)
   hat_delta <- m2 - hat_alpha %*% m2
-  #hat_delta <- pmax(0,hat_delta)
 
   list('hat_alpha'=hat_alpha,
        'hat_delta'=hat_delta,
@@ -99,6 +93,17 @@ vecARCH <- function(X, w=0.001,
     result <- list()
     for(i in 1:ncol(X)){
       result[[i]] <- X[,i] %*% t(Y[,i])
+    }
+    # Create Tensor Matrix
+    tensorVal <- do.call("cbind",result)
+    for(i in 2:ncol(X)){
+      # Build row
+      row <- result[[i]]
+      for(j in 2:ncol(X)){
+        func <- ifelse(j<i,t,function(X){X})
+        row <- cbind(row,func(C[[abs(i-j)+1]]))
+      }
+      tensorVal <- rbind(tensorVal, row)
     }
   }
 
