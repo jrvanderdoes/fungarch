@@ -14,34 +14,32 @@
 #'
 #' @examples
 #' set.seed(12345)
-#' # alpha <- function(t,s){ 16 * t * (1-t) * s * (1-s) }
-#' # delta <- function(t){ 0.1* t * (1-t) }
-#' alpha <- function(s,t){(1/8)*((s-1/2)^2 + (t-1/2)^2)}
+#' alpha <- function(t,s){ 16 * t * (1-t) * s * (1-s) }
 #' delta <- function(t){ rep(0.1,length(t)) }
-#' dat <- generateFunctionalCondVol(51,500,'arch',
-#'   alpha_par = alpha, delta_par = delta)
-#' est <- estimateYuleWalkerARCH(X = dat$garch_mat[-nrow(dat$garch_mat),])
+#' dat <- generateFunctionalCondVol(51,200,'arch',
+#'           alpha_par = alpha, delta_par = delta)
+#' est <- pointwiseARCH(X = dat$garch_mat)
 #'
-#' s <- seq (0,1,length.out=nrow(dat$garch_mat))
-#' alpha_true <- matrix(nrow=nrow(dat$garch_mat),ncol=nrow(dat$garch_mat))
-#' for(s1 in 1:length(s)){
-#'   for(s2 in 1:length(s)){
-#'     alpha_true[s1,s2] <- alpha(s[s1],s[s2])
-#'   }
-#' }
-#' # Compare Alpha
-#' plot3D::persp3D(z=alpha_true,main=parse(text = paste0('~ z == a(s,t)')),
-#'                 theta=300,phi=10,shade=0.25,xlab="s",ylab="t",zlab="z")
-#' plot3D::persp3D(z=est$hat_alpha,main=bquote(~z == hat(a)(s,t)),
-#'                 theta=300,phi=10,shade=0.25,xlab="s",ylab="t",zlab="z")
-#' # Compare Delta
-#' d <- seq(0,1,length.out=nrow(dat$garch_mat))
-#' delta_true <- delta(d)
-#' plot(x=d,delta_true,
-#'      ylim=c(min(delta_true, est$hat_delta),
-#'             max(delta_true,est$hat_delta)),
-#'      type='l')
-#' lines(x=d,y=est$hat_delta, col='red')
+#' # s <- seq (0,1,length.out=nrow(dat$garch_mat))
+#' # alpha_true <- matrix(nrow=nrow(dat$garch_mat),ncol=nrow(dat$garch_mat))
+#' # for(s1 in 1:length(s)){
+#' #   for(s2 in 1:length(s)){
+#' #     alpha_true[s1,s2] <- alpha(s[s1],s[s2])
+#' #   }
+#' # }
+#' ## Compare Alpha
+#' # plot3D::persp3D(z=alpha_true,main=parse(text = paste0('~ z == a(s,t)')),
+#' #                 theta=300,phi=10,shade=0.25,xlab="s",ylab="t",zlab="z")
+#' # plot3D::persp3D(z=est$hat_alpha,main=bquote(~z == hat(a)(s,t)),
+#' #                 theta=300,phi=10,shade=0.25,xlab="s",ylab="t",zlab="z")
+#' ## Compare Delta
+#' # d <- seq(0,1,length.out=nrow(dat$garch_mat))
+#' # delta_true <- delta(d)
+#' # plot(x=d,delta_true,
+#' #      ylim=c(min(delta_true, est$hat_delta),
+#' #             max(delta_true,est$hat_delta)),
+#' #      type='l')
+#' # lines(x=d,y=est$hat_delta, col='red')
 pointwiseARCH <- function(X, w=0.001, lambda=NA){
   #X <- X - rowMeans(X) # De-mean
   X <- X^2 # Pointwise square
@@ -199,27 +197,6 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
 
-  # # Lag-h Covariance operator estimates
-  # #   Formula (3.6)
-  # C_0 <- .estim_lag_cov(X)
-  # C_1 <- .estim_lag_cov(X, lag = 1)
-  #
-  # eigval_C_0 <- eigen(C_0)
-  #
-  # # Select K Projections, Remark 3.2(c)
-  # K <- which.min(cumsum(eigval_C_0$values)/sum(eigval_C_0$values) < 1-w)
-  #
-  # # Standardize Vectors in integral
-  # #   apply( eigval_C_0$vectors^2,MARGIN = 2,.approx_int)
-  # eigval_C_0$vectors <- eigval_C_0$vectors * sqrt(n)
-  #
-  # # Compute Projection
-  # projector <- matrix(0, nrow=n, ncol=n)
-  # for(i in 1:K){
-  #   projector <- projector +
-  #     ( eigval_C_0$vectors[,i] %*% t(eigval_C_0$vectors[,i]) )
-  # }
-  #
   # Define m2, (3.3)
   m2 <- 1 / N * rowSums(X^2)
 
@@ -305,8 +282,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
                            projector_pi, projector_beta,
                            N, n, m2){
   ## Estimate Pis (3.42)
-  invMat_pi <- solve( sqrt(N) * GL_hat %*% GL_hat +
-                        diag(lambda_pi,L*n,L*n) )
+  invMat_pi <- solve( sqrt(N) * GL_hat %*% GL_hat + diag(lambda_pi,L*n,L*n) )
   pi_hat <- sqrt(N) * GL1_hat %*% GL_hat %*% invMat_pi %*% projector_pi
   for(i in 0:L){
     pis[[i]] <- pi_hat[1:n,i*n+1:n]
