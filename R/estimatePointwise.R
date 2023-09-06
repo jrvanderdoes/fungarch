@@ -238,16 +238,24 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
 
   # Two param optimization, lambda_pi and lambda_beta
   optim_results <- optim(c(1000,1000),
-                         fn = function(lambdas){
-                           ests <- .estimateGARCH()
+                         fn = function(lambdas,GL_hat, GL1_hat,
+                                       projector_pi,
+                                       N, n, m2, L){
+                           ests <- .estimateGARCH(lambdas,
+                                                  GL_hat, GL1_hat,
+                                                  projector_pi,
+                                                  N, n, m2, L)
                            .computeGARCHError(X = X, alpha = ests$hat_alpha,
                                          beta = ests$hat_beta,
-                                         delta = ests$hat_delta)})
+                                         delta = ests$hat_delta)},
+                         GL_hat=GL_hat, GL1_hat=GL1_hat,
+                         projector_pi=projector_pi,
+                         N=N, n=n, m2=m2, L=L)
 
-  ests <- .estimateGARCH(optim_results$par[1], optim_results$par[2],
+  ests <- .estimateGARCH(optim_results$par,
                          GL_hat, GL1_hat,
-                         projector_pi, projector_beta,
-                         N, n, m2)
+                         projector_pi,
+                         N, n, m2, L)
 
   list('hat_alpha'=ests$hat_alpha,
        'hat_beta'=ests$hat_beta,
@@ -277,18 +285,23 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
 #' @export
 #'
 #' @examples
-.estimateGARCH <- function(lambda_pi, lambda_beta,
+.estimateGARCH <- function(lambdas,
                            GL_hat, GL1_hat,
-                           projector_pi, projector_beta,
-                           N, n, m2){
+                           projector_pi,
+                           N, n, m2, L){
+  lambda_pi <- lambdas[1]
+  lambda_beta <- lambdas[2]
+
   ## Estimate Pis (3.42)
   invMat_pi <- solve( sqrt(N) * GL_hat %*% GL_hat + diag(lambda_pi,L*n,L*n) )
   pi_hat <- sqrt(N) * GL1_hat %*% GL_hat %*% invMat_pi %*% projector_pi
+
+  pis <- list()
   for(i in 0:L){
-    pis[[i]] <- pi_hat[1:n,i*n+1:n]
+    pis[[i+1]] <- pi_hat[1:n,i*n+1:n]
   }
   # Formula (3.41)
-  #   Discuss
+  #   TODO:: Discuss
   bigPI <- pis[[1]]
   boldPI <- pis[[1]]
 
@@ -307,7 +320,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
 
 
   ## Estimate Beta (3.39)/(3.43)
-  #   Ask pi^*?
+  #   TODO:: Ask pi^*?
   invMat_beta <- solve( sqrt(N) * bigPI %*% bigPI +
                           diag(lambda_beta, n, n) )
   hat_beta <- sqrt(N) * boldPI %*% bigPI %*%
