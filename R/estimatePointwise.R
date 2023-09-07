@@ -1,12 +1,32 @@
 #' Pointwise Yule Walker ARCH Estimation
 #'
-#' TODO:: Add description
+#' Estimates the parameters for ARCH(1) model using pointwise Yule Walker
+#'  estimation.
 #'
-#' @param X Functional data, curves are the columns
-#' @param c (Optional) Numeric. Preliminary factor (at least 10^6)
-#' @param w (Optional) Numeric. Weight for choice of K.
+#' @param X Data.frame of functional data--curves as observations and rows as
+#'  discretization
+#' @param w (Optional) Numeric. Weight for choice of K that indicates the number
+#'  of projectors to use.
+#' @param lambda (Optional) Numeric. Amount of tikhonov regularation. Default is
+#'  NA which uses optimazation to find the value. Alternatively many values can
+#'  be given and tested, or a single value just used as given value.
 #'
-#' @return
+#' @return List of fit and some fitting parameters:
+#'  \enumerate{
+#'    \item hat_alpha: Estimated alpha estimate
+#'    \item hat_delta: Estimated delta estimate
+#'    \item estimate: Estimates from the estimated parameters
+#'    \item fitting_params: List of parameters used in fitting
+#'      \enumerate{
+#'        \item lambda: Parameter for YW estimation
+#'        \item C_0: Lag-0 covariance operator estimate
+#'        \item C_1: Lag-1 covariance operator estimate
+#'        \item eigval_C_0: Eigenvalues of C_0
+#'        \item K: Number of projectors (i.e. dimension) to use
+#'        \item projector:
+#'        \item error_plot
+#'      }
+#'  }
 #' @export
 #'
 #' @references Functional ARCH and GARCH models: A Yule-Walker approach.
@@ -111,7 +131,9 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 }
 
 
-#' Title
+#' Find Lambda Values from Various Options
+#'
+#' XXXX
 #'
 #' @param X
 #' @param C_0
@@ -240,33 +262,32 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   optim_results <- optim(c(1000,1000),
                          fn = function(lambdas,GL_hat, GL1_hat,
                                        projector_pi,
-                                       N, n, m2, L){
+                                       N, n, m2, L, w){
                            ests <- .estimateGARCH(lambdas,
                                                   GL_hat, GL1_hat,
                                                   projector_pi,
-                                                  N, n, m2, L)
+                                                  N, n, m2, L, w)
                            .computeGARCHError(X = X, alpha = ests$hat_alpha,
                                          beta = ests$hat_beta,
                                          delta = ests$hat_delta)},
                          GL_hat=GL_hat, GL1_hat=GL1_hat,
                          projector_pi=projector_pi,
-                         N=N, n=n, m2=m2, L=L)
+                         N=N, n=n, m2=m2, L=L, w=w)
 
   ests <- .estimateGARCH(optim_results$par,
                          GL_hat, GL1_hat,
                          projector_pi,
-                         N, n, m2, L)
+                         N, n, m2, L, w)
 
   list('hat_alpha'=ests$hat_alpha,
        'hat_beta'=ests$hat_beta,
        'hat_delta'=ests$hat_delta,
-       'fitting_params'=list('lambda'=lambda,
-                             'C_0'=C_0, 'C_1'=C_1,
-                             'invMat'=invMat,
-                             'eigval_C_0'=eigval_C_0,
+       'fitting_params'=list('lambdas'=optim_results$par,
+                             'GL_hat'=GL_hat, 'GL1_hat'=GL1_hat,
+                             'eigval_GL'=eigval_GL,
+                             'projector_pi'=projector_pi,
                              'K'=K,
-                             'projector'=projector,
-                             'error_plot'=error_plot))
+                             'm2'=m2))
 }
 
 
@@ -288,7 +309,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
 .estimateGARCH <- function(lambdas,
                            GL_hat, GL1_hat,
                            projector_pi,
-                           N, n, m2, L){
+                           N, n, m2, L, w){
   lambda_pi <- lambdas[1]
   lambda_beta <- lambdas[2]
 
@@ -297,7 +318,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   pi_hat <- sqrt(N) * GL1_hat %*% GL_hat %*% invMat_pi %*% projector_pi
 
   pis <- list()
-  for(i in 0:L){
+  for(i in 0:(L-1)){
     pis[[i+1]] <- pi_hat[1:n,i*n+1:n]
   }
   # Formula (3.41)
@@ -310,9 +331,15 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   hat_alpha <- pis[[1]]
 
   ## Find projector_beta
-  eigval_pi <- eigen(pi_hat)
+  eigval_pi <- eigen(bigPI)
 
-  projector_beta <- matrix(0, nrow=n*L, ncol=n*L)
+  # Select K Projections, Remark 3.2(c)
+  #cat(cumsum(eigval_pi$values))
+  #   TODO::Did Real
+  K <- which.min(Re(cumsum(eigval_pi$values)/sum(eigval_pi$values)) < 1-w)
+  eigval_pi$vectors <- eigval_pi$vectors * sqrt(n) #TODO:: check
+
+  projector_beta <- matrix(0, nrow=n, ncol=n)
   for(i in 1:K){
     projector_beta <- projector_beta +
       ( eigval_pi$vectors[,i] %*% t(eigval_pi$vectors[,i]) )
@@ -329,7 +356,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   # Estimate delta, (3.30)
   hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
 
-  list('hat_alpha'=hat_alpha,
-       'hat_beta'=hat_beta,
-       'hat_delta'=hat_delta)
+  list('hat_alpha'=Re(hat_alpha),
+       'hat_beta'=Re(hat_beta),
+       'hat_delta'=Re(hat_delta))
 }
