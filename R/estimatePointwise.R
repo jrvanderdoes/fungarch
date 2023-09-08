@@ -212,7 +212,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #' @export
 #'
 #' @examples
-pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
+pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
   #X <- X - rowMeans(X) # De-mean
   X <- X^2 # Pointwise square
   #X <- X - rowMeans(X) # De-mean
@@ -226,6 +226,9 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   C <- list()
   for(l in 0:L){
     C[[l+1]] <- .estim_lag_cov(X,lag=l)
+    # t(matrix(c(l-1,l,l+1,
+    #            l,l+1,l+2,
+    #            l+1,l+2,l+3),3,3))
   }
   GL_hat <- do.call("cbind",C[-(L+1)])
   GL1_hat <- do.call("cbind",C[-1])
@@ -259,22 +262,28 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   }
 
   # Two param optimization, lambda_pi and lambda_beta
-  optim_results <- optim(c(1000,1000),
-                         fn = function(lambdas,GL_hat, GL1_hat,
-                                       projector_pi,
-                                       N, n, m2, L, w){
-                           ests <- .estimateGARCH(lambdas,
-                                                  GL_hat, GL1_hat,
-                                                  projector_pi,
-                                                  N, n, m2, L, w)
-                           .computeGARCHError(X = X, alpha = ests$hat_alpha,
-                                         beta = ests$hat_beta,
-                                         delta = ests$hat_delta)},
-                         GL_hat=GL_hat, GL1_hat=GL1_hat,
-                         projector_pi=projector_pi,
-                         N=N, n=n, m2=m2, L=L, w=w)
+  if(is.na(lambdas)){
+    optim_results <- optim(c(1000000,1000000),
+                           fn = function(lambdas,GL_hat, GL1_hat,
+                                         projector_pi,
+                                         N, n, m2, L, w){
+                             ests <- .estimateGARCH(lambdas,
+                                                    GL_hat, GL1_hat,
+                                                    projector_pi,
+                                                    N, n, m2, L, w)
+                             .computeGARCHError(X = X, alpha = ests$hat_alpha,
+                                                beta = ests$hat_beta,
+                                                delta = ests$hat_delta)},
+                           GL_hat=GL_hat, GL1_hat=GL1_hat,
+                           projector_pi=projector_pi,
+                           N=N, n=n, m2=m2, L=L, w=w)
+    lambdas <- optim_results$par
+  }else if(length(lambdas)!= 2){
+    stop('Errors: lambdas must be NA or length 2')
+  }
 
-  ests <- .estimateGARCH(optim_results$par,
+
+  ests <- .estimateGARCH(lambdas,
                          GL_hat, GL1_hat,
                          projector_pi,
                          N, n, m2, L, w)
@@ -282,7 +291,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
   list('hat_alpha'=ests$hat_alpha,
        'hat_beta'=ests$hat_beta,
        'hat_delta'=ests$hat_delta,
-       'fitting_params'=list('lambdas'=optim_results$par,
+       'fitting_params'=list('lambdas'=lambdas,
                              'GL_hat'=GL_hat, 'GL1_hat'=GL1_hat,
                              'eigval_GL'=eigval_GL,
                              'projector_pi'=projector_pi,
@@ -347,7 +356,7 @@ pointwiseGARCH <- function(X, w=0.001, lambda=NA, L=3){
 
 
   ## Estimate Beta (3.39)/(3.43)
-  #   TODO:: Ask pi^*?
+  #   TODO:: Ask pi^* (3.3)?
   invMat_beta <- solve( sqrt(N) * bigPI %*% bigPI +
                           diag(lambda_beta, n, n) )
   hat_beta <- sqrt(N) * boldPI %*% bigPI %*%
