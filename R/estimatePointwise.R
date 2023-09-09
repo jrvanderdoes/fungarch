@@ -263,7 +263,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
 
   # Two param optimization, lambda_pi and lambda_beta
   if(is.na(lambdas)){
-    optim_results <- optim(c(1000000,1000000),
+    optim_results <- optim(c(1000,1000),
                            fn = function(lambdas,GL_hat, GL1_hat,
                                          projector_pi,
                                          N, n, m2, L, w){
@@ -333,7 +333,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
   # Formula (3.41)
   #   TODO:: Discuss
   bigPI <- pis[[1]]
-  boldPI <- pis[[1]]
+  boldPI <- pis[[2]]
 
 
   ## Alpha (3.43)
@@ -357,15 +357,15 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
 
   ## Estimate Beta (3.39)/(3.43)
   #   TODO:: Ask pi^* (3.3)?
-  invMat_beta <- solve( sqrt(N) * bigPI %*% bigPI +
+  invMat_beta <- solve( sqrt(N) * bigPI %*% t(bigPI) +
                           diag(lambda_beta, n, n) )
-  hat_beta <- sqrt(N) * boldPI %*% bigPI %*%
+  hat_beta <- sqrt(N) * boldPI %*% t(bigPI) %*%
     invMat_beta %*% projector_beta
 
   # Estimate delta, (3.30)
   hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
 
-  list('hat_alpha'=Re(hat_alpha),
-       'hat_beta'=Re(hat_beta),
-       'hat_delta'=Re(hat_delta))
+  list('hat_alpha'=(hat_alpha),
+       'hat_beta'=(hat_beta),
+       'hat_delta'=(hat_delta))
 }
