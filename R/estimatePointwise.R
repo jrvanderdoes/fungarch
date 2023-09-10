@@ -213,9 +213,11 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #'
 #' @examples
 pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
-  #X <- X - rowMeans(X) # De-mean
+  # Setup Data
+  X <- X - rowMeans(X) # De-mean
   X <- X^2 # Pointwise square
-  #X <- X - rowMeans(X) # De-mean
+  # X <- X - rowMeans(X) # De-mean
+
   N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
 
@@ -263,7 +265,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
 
   # Two param optimization, lambda_pi and lambda_beta
   if(is.na(lambdas)){
-    optim_results <- optim(c(1000,1000),
+    optim_results <- optim(c(50,50),
                            fn = function(lambdas,GL_hat, GL1_hat,
                                          projector_pi,
                                          N, n, m2, L, w){
@@ -273,7 +275,8 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
                                                     N, n, m2, L, w)
                              .computeGARCHError(X = X, alpha = ests$hat_alpha,
                                                 beta = ests$hat_beta,
-                                                delta = ests$hat_delta)},
+                                                delta = ests$hat_delta)
+                             },
                            GL_hat=GL_hat, GL1_hat=GL1_hat,
                            projector_pi=projector_pi,
                            N=N, n=n, m2=m2, L=L, w=w)
@@ -331,7 +334,6 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
     pis[[i+1]] <- pi_hat[1:n,i*n+1:n]
   }
   # Formula (3.41)
-  #   TODO:: Discuss
   bigPI <- pis[[1]]
   boldPI <- pis[[2]]
 
@@ -343,10 +345,8 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
   eigval_pi <- eigen(bigPI)
 
   # Select K Projections, Remark 3.2(c)
-  #cat(cumsum(eigval_pi$values))
-  #   TODO::Did Real
   K <- which.min(Re(cumsum(eigval_pi$values)/sum(eigval_pi$values)) < 1-w)
-  eigval_pi$vectors <- eigval_pi$vectors * sqrt(n) #TODO:: check
+  eigval_pi$vectors <- eigval_pi$vectors * sqrt(n)
 
   projector_beta <- matrix(0, nrow=n, ncol=n)
   for(i in 1:K){
@@ -356,7 +356,6 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
 
 
   ## Estimate Beta (3.39)/(3.43)
-  #   TODO:: Ask pi^* (3.3)?
   invMat_beta <- solve( sqrt(N) * bigPI %*% t(bigPI) +
                           diag(lambda_beta, n, n) )
   hat_beta <- sqrt(N) * boldPI %*% t(bigPI) %*%
@@ -366,6 +365,6 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
   hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
 
   list('hat_alpha'=(hat_alpha),
-       'hat_beta'=(hat_beta),
-       'hat_delta'=(hat_delta))
+       'hat_beta'=Re(hat_beta),
+       'hat_delta'=Re(hat_delta))
 }
