@@ -265,7 +265,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
 
   # Two param optimization, lambda_pi and lambda_beta
   if(is.na(lambdas)){
-    optim_results <- optim(c(50,50),
+    optim_results <- optim(c(10,10),
                            fn = function(lambdas,GL_hat, GL1_hat,
                                          projector_pi,
                                          N, n, m2, L, w){
