@@ -1,4 +1,4 @@
-#' Title
+#' Operator ARCH Estimation
 #'
 #' @param X
 #' @param w
@@ -8,7 +8,7 @@
 #' @export
 #'
 #' @examples
-vecARCH <- function(X, w=0.001, lambda=NA){
+operatorARCH <- function(X, w=0.001, lambda=NA){
   #X <- X - rowMeans(X) # De-mean
   X <- X^2 # Pointwise square
   #X <- X - rowMeans(X) # De-mean
