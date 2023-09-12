@@ -133,21 +133,24 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 
 #' Find Lambda Values from Various Options
 #'
-#' XXXX
+#' This (internal) function selects the best lambda, or Tikhonov, parameter for
+#'  the inverse given an array of options.
 #'
-#' @param X
-#' @param C_0
-#' @param C_1
-#' @param I_H
-#' @param N
-#' @param projector
-#' @param m2
+#' @param lambas Vector of numerics for different lambda values to test
+#' @param X Data.frame of (squared) functional data--curves as observations and
+#'  rows as discretization
+#' @param C_0 Data.frame of numerics for the lag-0 covariance operator
+#' @param C_1 Data.frame of numerics for the lag-1 covariance operator
+#' @param projector Data.frame of numerics for the projector matrix
+#' @param m2 Vector of numerics for the squared pointwise average
 #'
-#' @return
-#' @export
-#'
-#' @examples
-.findLambdaARCH <- function(lambdas,X,C_0,C_1,I_H,projector,m2){
+#' @return List with the following elements:
+#'  \enumerate{
+#'    \item lambda: Lambda which returns the smallest (L2) error
+#'    \item error_plot: ggplot object showing the error for different lambda
+#'      values
+#'  }
+.findLambdaARCH <- function(lambdas,X,C_0,C_1,projector,m2){
   errors <- rep(NA,length(lambdas))
 
   for(i in 1:length(lambdas)){
