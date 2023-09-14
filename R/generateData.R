@@ -50,7 +50,8 @@ generateFunctionalCondVol <- function(resolution, N, type = 'garch',
                                       alpha_par=NULL, beta_par=NULL, delta_par=NULL,
                                       burnin=1000){
 
-  times <- 1:resolution/resolution
+  times <- seq(0,1,length.out=resolution)
+  #times <- 1:resolution/resolution
 
   switch(type,
          arch = {
@@ -123,7 +124,10 @@ generateFunctionalCondVol <- function(resolution, N, type = 'garch',
 
   list(garch_mat = sim_garch_matrix[, burnin + 1:N],
        sigma_mat = sim_sigma2_matrix[, burnin + 1:N],
-       error_matrix = error_matrix[, burnin + 1:N])
+       error_matrix = error_matrix[, burnin + 1:N],
+       params=list(alpha_par=alpha_par,
+                   beta_par=beta_par,
+                   delta_par=delta_par))
 }
 
 #' Data Generating Process - Independent Process

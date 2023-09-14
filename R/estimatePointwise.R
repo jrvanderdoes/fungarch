@@ -61,9 +61,8 @@
 #' #      type='l')
 #' # lines(x=d,y=est$hat_delta, col='red')
 pointwiseARCH <- function(X, w=0.001, lambda=NA){
-  #X <- X - rowMeans(X) # De-mean
+  X <- X - rowMeans(X) # De-mean
   X <- X^2 # Pointwise square
-  #X <- X - rowMeans(X) # De-mean
   N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
 
@@ -188,9 +187,9 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #' @examples
 .estimateARCH <- function(N, n, C_0, C_1, lambda, projector, m2){
   # Formula (3.26)
-  invMat <- solve( sqrt(N) * C_0 %*% C_0 + diag(lambda, n, n) )
+  invMat <- solve( C_0 %*% C_0 + diag(lambda, n, n) )
   #   Formula (4.8)
-  hat_alpha <- sqrt(N) * C_1 %*% C_0 %*% invMat %*% projector
+  hat_alpha <- C_1 %*% C_0 %*% invMat %*% projector
 
   # Estimate delta, (4.9)
   hat_delta <- m2 - (hat_alpha %*% m2) / n
@@ -257,7 +256,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
   #   Remark 3.2(c)
   K <- which.min(cumsum(eigval_GL$values)/sum(eigval_GL$values) < 1-w)
 
-  eigval_GL$vectors <- eigval_GL$vectors * sqrt(n) #TODO:: check
+  eigval_GL$vectors <- eigval_GL$vectors * sqrt(n)
 
   # Compute Projection
   projector_pi <- matrix(0, nrow=n*L, ncol=n*L)
@@ -267,7 +266,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
   }
 
   # Two param optimization, lambda_pi and lambda_beta
-  if(is.na(lambdas)){
+  if(length(lambdas)==1 && is.na(lambdas)){
     optim_results <- optim(c(3,10),
                            fn = function(lambdas,GL_hat, GL1_hat,
                                          projector_pi,
@@ -280,14 +279,13 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
                                                 beta = ests$hat_beta,
                                                 delta = ests$hat_delta)
                              },
+                           method = "L-BFGS-B",
+                           lower=c(10^-8,10^-8),
                            GL_hat=GL_hat, GL1_hat=GL1_hat,
                            projector_pi=projector_pi,
                            N=N, n=n, m2=m2, L=L, w=w)
     lambdas <- optim_results$par
-  }else if(length(lambdas)!= 2){
-    stop('Errors: lambdas must be NA or length 2')
   }
-
 
   ests <- .estimateGARCH(lambdas,
                          GL_hat, GL1_hat,
@@ -356,6 +354,8 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
     projector_beta <- projector_beta +
       ( eigval_pi$vectors[,i] %*% t(eigval_pi$vectors[,i]) )
   }
+  # Although Im=0, still Im
+  projector_beta <- Re(projector_beta)
 
 
   ## Estimate Beta (3.39)/(3.43)
@@ -367,7 +367,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
   # Estimate delta, (3.30)
   hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
 
-  list('hat_alpha'=(hat_alpha),
-       'hat_beta'=Re(hat_beta),
-       'hat_delta'=Re(hat_delta))
+  list('hat_alpha'=hat_alpha,
+       'hat_beta'=hat_beta,
+       'hat_delta'=hat_delta)
 }

@@ -43,7 +43,9 @@
   estimate <- .predictARCH(X,alpha,delta,est_sqr=TRUE)
 
   for(i in 2:ncol(X)){
+    # TODO:: Ask about this
     error[i] <- sqrt(.approx_int((sqrt(X[,i]) - estimate[,i])^2))
+    #error[i] <- sqrt(.approx_int((X[,i] - estimate[,i])^2))
   }
 
   sum(error)
@@ -102,6 +104,7 @@
 
   for(i in 2:ncol(X)){
     error[i] <- sqrt(.approx_int((sqrt(X[,i]) - estimate[,i])^2))
+    #error[i] <- sqrt(.approx_int(((X[,i]) - estimate[,i])^2))
   }
 
   sum(error)

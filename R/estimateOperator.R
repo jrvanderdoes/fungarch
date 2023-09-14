@@ -9,8 +9,8 @@
 #'
 #' @examples
 operatorARCH <- function(X, w=0.001, lambda=NA){
-  #X <- X - rowMeans(X) # De-mean
-  X <- X^2 # Pointwise square
+  X <- X - rowMeans(X) # De-mean
+  X <- .tensor(X) # Pointwise square
   #X <- X - rowMeans(X) # De-mean
   N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
@@ -98,7 +98,7 @@ operatorARCH <- function(X, w=0.001, lambda=NA){
       row <- result[[i]]
       for(j in 2:ncol(X)){
         func <- ifelse(j<i,t,function(X){X})
-        row <- cbind(row,func(C[[abs(i-j)+1]]))
+        row <- cbind(row,func(result[[abs(i-j)+1]]))
       }
       tensorVal <- rbind(tensorVal, row)
     }

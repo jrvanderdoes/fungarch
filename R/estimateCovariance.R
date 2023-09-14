@@ -9,9 +9,9 @@
 #'
 #' @examples
 .estim_lag_cov <- function(X, lag=0){
+  # Build from (3.9)/(3.11)
   N <- ncol(X)
 
-  # TODO:: Confirm if use definition from (3.3) or after (3.6)?
   m1 <- (1/(N-lag)) * rowSums(X[,1:(N-lag)])
 
   covMat <- matrix(0, nrow=nrow(X),ncol=nrow(X))
