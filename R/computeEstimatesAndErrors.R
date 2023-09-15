@@ -1,13 +1,13 @@
-#' Title
+#' Predict ARCH Estimates
+#'
+#' This (internal) function estimates given X^2, alpha, and delta
+#'  of an ARCH(1) process.
 #'
 #' @param X2
 #' @param alpha
 #' @param delta
 #'
 #' @return
-#' @export
-#'
-#' @examples
 .predictARCH <- function(X2, alpha, delta, est_sqr=FALSE){
   estimate <- matrix(0, ncol = ncol(X2),nrow = nrow(X2))
   estimate[,1] <- delta
@@ -28,16 +28,17 @@
 }
 
 
-#' Title
+#' Compute ARCH Error
+#'
+#' This (internal) function estimates values and then compares the estimates
+#'  to the known values of an ARCH(1,1) process. The functional L2 error is
+#'  estimated.
 #'
 #' @param X
 #' @param alpha
 #' @param delta
 #'
 #' @return
-#' @export
-#'
-#' @examples
 .computeARCHError <- function(X,alpha,delta){
   error <- rep(0, ncol(X))
   estimate <- .predictARCH(X,alpha,delta,est_sqr=TRUE)
@@ -54,16 +55,16 @@
 
 ###############################################
 
-#' Title
+#' Predict GARCH Estimates
+#'
+#' This (internal) function estimates given X^2, alpha, beta, and delta
+#'  of an GARCH(1,1) process.
 #'
 #' @param X2
 #' @param alpha
 #' @param delta
 #'
 #' @return
-#' @export
-#'
-#' @examples
 .predictGARCH <- function(X2, alpha, beta, delta, est_sqr=FALSE){
   estimate <- matrix(0, ncol = ncol(X2),nrow = nrow(X2))
   estimate[,1] <- delta
@@ -88,16 +89,17 @@
 }
 
 
-#' Title
+#' Compute GARCH Error
+#'
+#' This (internal) function estimates values and then compares the estimates
+#'  to the known values of a GARCH(1,1) process. The functional L2 error is
+#'  estimated.
 #'
 #' @param X
 #' @param alpha
 #' @param delta
 #'
 #' @return
-#' @export
-#'
-#' @examples
 .computeGARCHError <- function(X,alpha,beta,delta){
   error <- rep(0, ncol(X))
   estimate <- .predictGARCH(X,alpha,beta,delta,est_sqr=TRUE)
