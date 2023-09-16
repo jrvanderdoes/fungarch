@@ -1,4 +1,4 @@
-#' Pointwise Yule Walker ARCH Estimation
+#' Pointwise Yule Walker ARCH(1) Estimation
 #'
 #' Estimates the parameters for ARCH(1) model using pointwise Yule Walker
 #'  estimation.
@@ -172,7 +172,10 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 }
 
 
-#' Title
+#' Estimate ARCH Parameters
+#'
+#' This (internal) function computes the alpha and delta parameters for a
+#'  ARCH(1) process
 #'
 #' @param N
 #' @param n
@@ -182,9 +185,6 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #' @param m2
 #'
 #' @return
-#' @export
-#'
-#' @examples
 .estimateARCH <- function(N, n, C_0, C_1, lambda, projector, m2){
   # Formula (3.26)
   invMat <- solve( C_0 %*% C_0 + diag(lambda, n, n) )
@@ -204,7 +204,10 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 
 
 
-#' Title
+#' Pointwise Yule Walker GARCH(1,1) Estimation
+#'
+#' Estimates the parameters for GARCH(1,1) model using pointwise Yule Walker
+#'  estimation.
 #'
 #' @param X
 #' @param w
