@@ -319,9 +319,6 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
 #' @param n
 #'
 #' @return
-#' @export
-#'
-#' @examples
 .estimateGARCH <- function(lambdas,
                            GL_hat, GL1_hat,
                            projector_pi,
@@ -344,6 +341,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
 
   ## Alpha (3.43)
   hat_alpha <- pis[[1]]
+  #hat_alpha <- pmax(hat_alpha,0)
 
   ## Find projector_beta
   eigval_pi <- eigen(bigPI)
@@ -366,9 +364,11 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
                           diag(lambda_beta, n, n) )
   hat_beta <- sqrt(N) * boldPI %*% t(bigPI) %*%
     invMat_beta %*% projector_beta
+  #hat_beta <- pmax(hat_beta,0)
 
   # Estimate delta, (3.30)
   hat_delta <- m2 - ((hat_alpha + hat_beta) %*% m2) / n
+  hat_delta <- pmax(hat_delta,0)
 
   list('hat_alpha'=hat_alpha,
        'hat_beta'=hat_beta,
