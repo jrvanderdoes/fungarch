@@ -3,9 +3,7 @@
 #' Estimates the parameters for ARCH(1) model using operator Yule Walker
 #'  estimation.
 #'
-#' @param X
-#' @param w
-#' @param lambda
+#' @inheritParams pointwiseARCH
 #'
 #' @return
 #' @export
@@ -13,10 +11,10 @@
 #' @examples
 operatorARCH <- function(X, w=0.001, lambda=NA){
   X <- X - rowMeans(X) # De-mean
-  X <- tensorA::to.tensor(X)
-  tensorA::mul.tensor(X=X,Y=X)
-  tensorA::einstein.tensor(X,X)
-  #X <- .tensor(X) # Pointwise square
+  #X <- tensorA::to.tensor(X)
+  #X <- tensorA::mul.tensor(X=X,Y=X)
+  #tensorA::einstein.tensor(X,X)
+  X <- .tensor(X) # Pointwise square
   #X <- X - rowMeans(X) # De-mean
   N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
@@ -114,5 +112,5 @@ operatorARCH <- function(X, w=0.001, lambda=NA){
     }
   }
 
-  result
+  tensorVal
 }
