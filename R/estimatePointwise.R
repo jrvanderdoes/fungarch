@@ -177,12 +177,12 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #' This (internal) function computes the alpha and delta parameters for a
 #'  ARCH(1) process
 #'
-#' @param N
-#' @param n
-#' @param c_0
-#' @param lambda
-#' @param projector
-#' @param m2
+#' @param N Numeric for the total number of observations.
+#' @param n Numeric for the resolution.
+#' @param c_0 Matrix of numerics for the lag 0 covariance operator
+#' @param lambda Numeric for the smoothing parameter of Tikhonov
+#' @param projector Matrix of numerics for projection
+#' @param m2 Vector of numerics for average squared values
 #'
 #' @return
 .estimateARCH <- function(N, n, C_0, C_1, lambda, projector, m2){
@@ -209,9 +209,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #' Estimates the parameters for GARCH(1,1) model using pointwise Yule Walker
 #'  estimation.
 #'
-#' @param X
-#' @param w
-#' @param lambda
+#' @inheritParams pointwiseARCH
 #'
 #' @return
 #' @export
