@@ -211,7 +211,22 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #'
 #' @inheritParams pointwiseARCH
 #'
-#' @return
+#' @return List with the following entries:
+#'  \enumerate{
+#'    \item hat_alpha:
+#'    \item hat_beta
+#'    \item hat_delta
+#'    \item fitting_params:
+#'      \enumerate{
+#'        \item lambdas
+#'        \item GL_hat
+#'        \item GL1_hat
+#'        \item eigval_GL
+#'        \item projector_pi
+#'        \item K
+#'        \item m2
+#'      }
+#'  }
 #' @export
 #'
 #' @examples
