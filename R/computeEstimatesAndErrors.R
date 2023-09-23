@@ -3,9 +3,9 @@
 #' This (internal) function estimates given X^2, alpha, and delta
 #'  of an ARCH(1) process.
 #'
-#' @param X2
-#' @param alpha
-#' @param delta
+#' @param X2 Matrix of numerics indicating the squared process
+#' @param alpha Matrix of numerics estimating the alpha values
+#' @param delta Matrix of numerics estimating the delta values
 #'
 #' @return
 .predictARCH <- function(X2, alpha, delta, est_sqr=FALSE){
