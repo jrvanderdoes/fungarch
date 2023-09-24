@@ -60,9 +60,7 @@
 #' This (internal) function estimates given X^2, alpha, beta, and delta
 #'  of an GARCH(1,1) process.
 #'
-#' @param X2
-#' @param alpha
-#' @param delta
+#' @inheritParams .predictARCH
 #'
 #' @return
 .predictGARCH <- function(X2, alpha, beta, delta, est_sqr=FALSE){
