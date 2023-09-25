@@ -34,12 +34,11 @@
 #'  to the known values of an ARCH(1,1) process. The functional L2 error is
 #'  estimated.
 #'
-#' @param X
-#' @param alpha
-#' @param delta
+#' @param X Matrix of numerics indicating the squared process
+#' @inheritParams .predictARCH
 #'
 #' @return
-.computeARCHError <- function(X,alpha,delta){
+.computeARCHError <- function(X, alpha, delta){
   error <- rep(0, ncol(X))
   estimate <- .predictARCH(X,alpha,delta,est_sqr=TRUE)
 
