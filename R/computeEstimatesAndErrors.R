@@ -92,9 +92,7 @@
 #'  to the known values of a GARCH(1,1) process. The functional L2 error is
 #'  estimated.
 #'
-#' @param X
-#' @param alpha
-#' @param delta
+#' @inheritParams .computeARCHError
 #'
 #' @return
 .computeGARCHError <- function(X,alpha,beta,delta){
