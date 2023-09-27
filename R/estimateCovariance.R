@@ -5,7 +5,6 @@
 #' @param lag
 #'
 #' @return
-#' @export
 #'
 #' @examples
 .estim_lag_cov <- function(X, lag=0){

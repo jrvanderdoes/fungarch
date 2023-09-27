@@ -140,7 +140,6 @@ generateFunctionalCondVol <- function(resolution, N, type = 'garch',
 #'
 #' @return A (resolution) x (number of observations) matrix for iid sequences,
 #'  where the finite realization of curves are stored in columns.
-#' @export
 #'
 #' @details
 #' \eqn{x_i(t)=e^{-t/2}W_i(e^t)}, \eqn{t \in [0,1]},\cr

@@ -87,7 +87,6 @@ operatorARCH <- function(X, w=0.001, lambda=NA){
 #' @param Y
 #'
 #' @return
-#' @export
 #'
 #' @examples
 .tensor <- function(X,Y=X){
