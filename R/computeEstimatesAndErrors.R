@@ -7,7 +7,9 @@
 #' @param alpha Matrix of numerics estimating the alpha values
 #' @param delta Matrix of numerics estimating the delta values
 #'
-#' @return
+#' @return Estimate ARCH(1) based on data with given alpha and delta
+#'
+#' @noRd
 .predictARCH <- function(X2, alpha, delta, est_sqr=FALSE){
   estimate <- matrix(0, ncol = ncol(X2),nrow = nrow(X2))
   estimate[,1] <- delta
@@ -37,7 +39,9 @@
 #' @param X Matrix of numerics indicating the squared process
 #' @inheritParams .predictARCH
 #'
-#' @return
+#' @return  Estimate of error based on data with given alpha and delta
+#'
+#' @noRd
 .computeARCHError <- function(X, alpha, delta){
   error <- rep(0, ncol(X))
   estimate <- .predictARCH(X,alpha,delta,est_sqr=TRUE)
@@ -61,7 +65,9 @@
 #'
 #' @inheritParams .predictARCH
 #'
-#' @return
+#' @return Estimate of GARCH(1,1) based on data with given alpha, beta, and delta
+#'
+#' @noRd
 .predictGARCH <- function(X2, alpha, beta, delta, est_sqr=FALSE){
   estimate <- matrix(0, ncol = ncol(X2),nrow = nrow(X2))
   estimate[,1] <- delta
@@ -94,7 +100,9 @@
 #'
 #' @inheritParams .computeARCHError
 #'
-#' @return
+#' @return  Estimate error based on data with given alpha, beta, and delta
+#'
+#' @noRd
 .computeGARCHError <- function(X,alpha,beta,delta){
   error <- rep(0, ncol(X))
   estimate <- .predictGARCH(X,alpha,beta,delta,est_sqr=TRUE)
