@@ -227,7 +227,21 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #'        \item m2
 #'      }
 #'  }
-#' @export
+#' @export List of parameters and estimates for GARCH(1,1):
+#'  \enumerate{
+#'    \item hat_alpha: Estimate of alpha
+#'    \item hat_beta:, Estimate of beta
+#'    \item hat_delta: Estimate of delta
+#'    \item fitting_params: List of parameters
+#'      \enumerate{
+#'        lambdas: Smoothing parameters used for Tichonov
+#'        GL_hat: Estimate of GL
+#'        GL1_hat: Estimate of lag 1 GL
+#'        eigval_GL: Estimate of Eigenvalues of GL
+#'        projector_pi: Estimate of projector for pi
+#'        K: Estimate for number of parameters to use
+#'        m2: Estimate of m2
+#'  }
 #'
 #' @examples
 pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
