@@ -331,7 +331,14 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
 #' @param N
 #' @param n
 #'
-#' @return
+#' @return List of parameter estimates for GARCH(1,1) process:
+#'  \enumerate{
+#'    \item hat_alpha: Estimate of alpha
+#'    \item hat_beta: Estimate of beta
+#'    \item hat_delta: Estimate of delta
+#'  }
+#'
+#' @noRd
 .estimateGARCH <- function(lambdas,
                            GL_hat, GL1_hat,
                            projector_pi,
