@@ -184,7 +184,11 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #' @param projector Matrix of numerics for projection
 #' @param m2 Vector of numerics for average squared values
 #'
-#' @return
+#' @return List of parameter estimates for ARCH(1):
+#'  \enumerate{
+#'    \item hat_alpha: Estimate for alpha
+#'    \item hat_delta: Estimate for delta
+#'  }
 .estimateARCH <- function(N, n, C_0, C_1, lambda, projector, m2){
   # Formula (3.26)
   invMat <- solve( C_0 %*% C_0 + diag(lambda, n, n) )
