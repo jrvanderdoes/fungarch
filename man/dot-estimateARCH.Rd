@@ -19,6 +19,13 @@
 
 \item{c_0}{Matrix of numerics for the lag 0 covariance operator}
 }
+\value{
+List of parameter estimates for ARCH(1):
+\enumerate{
+\item hat_alpha: Estimate for alpha
+\item hat_delta: Estimate for delta
+}
+}
 \description{
 This (internal) function computes the alpha and delta parameters for a
 ARCH(1) process
