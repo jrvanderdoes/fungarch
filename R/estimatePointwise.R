@@ -101,7 +101,6 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
   } else if(is.na(lambda)){
     optim_results <-
       optim(10000,function(lambda, X, N, n, C_0, C_1, projector, m2){
-
         ests <- .estimateARCH(N=N, n=n, C_0=C_0, C_1=C_1,
                               lambda=lambda, projector=projector, m2=m2)
 
@@ -120,7 +119,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
   list('hat_alpha'=ests$hat_alpha,
        'hat_delta'=ests$hat_delta,
        'estimate'=.predictARCH(X2=X, alpha=ests$hat_alpha,
-                               delta=ests$hat_delta, est_sqr=FALSE),
+                               delta=ests$hat_delta, est2 = FALSE),
        'fitting_params'=list('lambda'=lambda,
                              'C_0'=C_0, 'C_1'=C_1,
                              'eigval_C_0'=eigval_C_0,
@@ -191,9 +190,9 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #'  }
 .estimateARCH <- function(N, n, C_0, C_1, lambda, projector, m2){
   # Formula (3.26)
-  invMat <- solve( C_0 %*% C_0 + diag(lambda, n, n) )
+  invMat <- solve( sqrt(N) * C_0 %*% C_0 + diag(lambda, n, n) )
   #   Formula (4.8)
-  hat_alpha <- C_1 %*% C_0 %*% invMat %*% projector
+  hat_alpha <- sqrt(N) * C_1 %*% C_0 %*% invMat %*% projector
 
   # Estimate delta, (4.9)
   hat_delta <- m2 - (hat_alpha %*% m2) / n
@@ -201,8 +200,6 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
   list('hat_alpha'=hat_alpha,
        'hat_delta'=hat_delta)
 }
-
-
 
 ################################################################################
 
