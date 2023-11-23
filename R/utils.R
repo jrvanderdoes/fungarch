@@ -4,7 +4,7 @@
 #'
 #' @param x This can be a vector or matrix
 #'
-#' @return Numeric estimating intergral value
+#' @return Numeric estimating integral value
 #'
 #' @noRd
 .approx_int <- function(x){
