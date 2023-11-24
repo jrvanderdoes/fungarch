@@ -145,7 +145,6 @@ operatorARCH <- function(X, w=0.001, theta=NA){
 #' @param n
 #'
 #' @return
-#' @export
 #'
 #' @examples
 .estimateARCH_tensor <- function(C_ZZe0, C_ZY1, theta, projector,
