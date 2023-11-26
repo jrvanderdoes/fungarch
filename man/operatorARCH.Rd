@@ -4,7 +4,7 @@
 \alias{operatorARCH}
 \title{Operator ARCH Estimation}
 \usage{
-operatorARCH(X, w = 0.001, lambda = NA)
+operatorARCH(X, w = 0.001, theta = NA)
 }
 \arguments{
 \item{X}{Data.frame of functional data--curves as observations and rows as
@@ -12,10 +12,6 @@ discretization}
 
 \item{w}{(Optional) Numeric. Weight for choice of K that indicates the number
 of projectors to use.}
-
-\item{lambda}{(Optional) Numeric. Amount of tikhonov regularation. Default is
-NA which uses optimazation to find the value. Alternatively many values can
-be given and tested, or a single value just used as given value.}
 }
 \description{
 Estimates the parameters for ARCH(1) model using operator Yule Walker
