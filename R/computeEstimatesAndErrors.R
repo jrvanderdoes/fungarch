@@ -55,6 +55,15 @@
   sum(error)
 }
 
+#' Title
+#'
+#' @param X
+#' @param alpha
+#' @param delta
+#'
+#' @return
+#'
+#' @noRd
 .computeARCHError_tensor <- function(X, alpha, delta){
   error <- rep(0, ncol(X))
   estimate <- .predictARCH_tensor(X,alpha,delta,est_sqr=TRUE)
