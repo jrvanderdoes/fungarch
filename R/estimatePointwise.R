@@ -148,6 +148,8 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #'    \item error_plot: ggplot object showing the error for different lambda
 #'      values
 #'  }
+#'
+#' @noRd
 .findLambdaARCH <- function(lambdas,X,C_0,C_1,projector,m2){
   errors <- rep(NA,length(lambdas))
 
@@ -188,6 +190,8 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
 #'    \item hat_alpha: Estimate for alpha
 #'    \item hat_delta: Estimate for delta
 #'  }
+#'
+#' @noRd
 .estimateARCH <- function(N, n, C_0, C_1, lambda, projector, m2){
   # Formula (3.26)
   invMat <- solve( sqrt(N) * C_0 %*% C_0 + diag(lambda, n, n) )
