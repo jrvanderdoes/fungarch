@@ -89,7 +89,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
   }
 
   # Define m2, (3.3)
-  m2 <- 1 / N * rowSums(X^2)
+  m2 <- 1 / N * rowSums(X)
 
   # Estimate alpha and delta
   error_plot <- NULL
@@ -199,7 +199,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
   hat_alpha <- sqrt(N) * C_1 %*% C_0 %*% invMat %*% projector
 
   # Estimate delta, (4.9)
-  hat_delta <- m2 - (hat_alpha %*% m2) / n
+  hat_delta <- pmax(0,m2 - (hat_alpha %*% m2) / n)
 
   list('hat_alpha'=hat_alpha,
        'hat_delta'=hat_delta)
@@ -245,7 +245,7 @@ pointwiseGARCH <- function(X, w=0.001, lambdas=NA, L=3){
   n <- nrow(X) # Resolution
 
   # Define m2, (3.3)
-  m2 <- 1 / N * rowSums(X^2)
+  m2 <- 1 / N * rowSums(X)
 
   ## Estimate G_hat (3.9)
   C <- list()
