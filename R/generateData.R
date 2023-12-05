@@ -167,16 +167,9 @@ generateFunctionalCondVol <- function(resolution, N, type = 'garch',
 #'
 #' @seealso \code{\link{.generateFunctionalIID}}
 #' @examples
-#' # generate discrete evaluations of 100 FARCH curves that each curve is
-#'  realized on 50 grid points.
-#' data <- generateFunctionalCondVol(50,100,'garch')
-#' plot_fd(data$garch_mat)
-#' data <- generateFunctionalCondVol(50,100,'arch')
-#' plot_fd(data$garch_mat)
+#' data <- generateFunctionalCondVol_ff(50,100,'arch')
 #'
 #' @references
-#' Hormann, S., Horvath, L., Reeder, R. (2013). A functional version of the ARCH model. Econometric Theory. 29(2), 267-288. <doi:10.1017/S0266466612000345>.\cr
-#' Aue, A., Horvath, L., F. Pellatt, D. (2017). Functional generalized autoregressive conditional heteroskedasticity. Journal of Time Series Analysis. 38(1), 3-21. <doi:10.1111/jtsa.12192>.\cr
 #'
 generateFunctionalCondVol_ff <- function(resolution, N, type = 'arch',
                                          alpha_par=NULL, delta_par=NULL, beta_par=NULL,
