@@ -17,7 +17,7 @@
   for(i in 2:ncol(X2)){
     # TODO:: Change to matrix mult
     for(j in 1:nrow(X2)){
-      vector_op <- alpha[j, ] * X2[,(i-1)] # X^2
+      vector_op <- alpha[j,] * X2[,(i-1)] # X^2
       estimate[j,i] <- delta[j] + .approx_int(as.matrix(vector_op))
       #pracma::trapz(x=seq(0,1,length.out=length(vector_op)), y=vector_op)
     }
