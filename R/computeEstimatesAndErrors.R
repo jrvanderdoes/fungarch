@@ -18,7 +18,7 @@
     # TODO:: Change to matrix mult
     for(j in 1:nrow(X2)){
       vector_op <- alpha[j,] * X2[,(i-1)] # X^2
-      estimate[j,i] <- delta[j] + .approx_int(as.matrix(vector_op))
+      estimate[j,i] <- delta[j] + dot_integrate(as.matrix(vector_op))
       #pracma::trapz(x=seq(0,1,length.out=length(vector_op)), y=vector_op)
     }
   }
@@ -48,75 +48,17 @@
   estimate <- .predictARCH(X,alpha,delta,est2=TRUE)
 
   for(i in 2:ncol(X)){
-    #error[i] <- sqrt(.approx_int((X[,i] - estimate[,i])^2))
-    error[i] <- .approx_int(abs(X[,i] - estimate[,i]))
+    error[i] <- dot_integrate(abs(X[,i] - estimate[,i]))
   }
 
   sum(error)
 }
-
-#' #' Title
-#' #'
-#' #' @param X
-#' #' @param alpha
-#' #' @param delta
-#' #'
-#' #' @return
-#' #'
-#' #' @noRd
-#' .computeARCHError_tensor <- function(X, alpha, delta){
-#'   error <- rep(0, ncol(X))
-#'   estimate <- .predictARCH_tensor(X,alpha,delta,est_sqr=TRUE)
-#'
-#'   for(i in 2:dim(X)[3]){
-#'     #error[i] <- sqrt(.approx_int((X[,i] - estimate[,i])^2))
-#'     error[i] <- .approx_int(abs(X[,,i] - estimate[,,i]))
-#'   }
-#'
-#'   sum(error)
-#' }
-#'
-#' .predictARCH_tensor <- function(X2, alpha, delta, est_sqr=FALSE){
-#'   dims <- dim(X2)
-#'   estimate <- array(0, dims)
-#'   estimate[,,1] <- delta
-#'
-#'   for(i in 2:dims[3]){
-#'     # TODO:: Change to matrix mult
-#'     for(j in 1:dims[2]){
-#'       #vector_op <- alpha[j, ] * X2[,,(i-1)] # X^2
-#'       #estimate[j,,i] <- delta[j,] + colSums(vector_op)/dims[1]#.approx_int(as.matrix(vector_op))
-#'
-#'       #vector_op <- alpha %*% X2[,,(i-1)] # X^2
-#'       #estimate[j,,i] <- delta[j,] + colSums(vector_op)/dims[1]#.approx_int(as.matrix(vector_op))
-#'
-#'       vector_op <- alpha %*% X2[,,(i-1)] # X^2
-#'       estimate[j,,i] <- delta[j,] + .approx_int(as.matrix(vector_op))
-#'     }
-#'   }
-#'
-#'   if(est_sqr) return(estimate)
-#'
-#'   estimate <- ifelse(estimate>0,estimate,0)
-#'
-#'
-#'   # Fix with something like following...
-#'
-#'   # #    See (66)
-#'   # estimate_svd <- svd(estimate[,,i])
-#'   # estimate_sqrt <- estimate_svd$u %*% diag(sqrt(estimate_svd$d)) %*% t(estimate_svd$v)
-#'   # # Formula (2)
-#'   # estimate[,i] <- estimate_sqrt
-#'   sqrt(estimate)
-#' }
 
 .computeARCHError_tensor_new <- function(X, alpha, delta, C_eps){
   error <- rep(0, dim(X)[3])
   estimate <- .predictARCH_tensor_new(X,alpha,delta, C_eps)
 
   for(i in 2:dim(X)[3]){
-    #error[i] <- sqrt(.approx_int((X[,i] - estimate[,i])^2))
-    # TODO: Check integration
     error[i] <- .approx_int(abs(X[,,i] - estimate[,,i]))
   }
 
@@ -135,18 +77,13 @@
   # c_e is cov OU
 
   ## TODO:: Review this
+  tmp <- 0
   for(i in 2:dims[3]){
     # TODO:: Change to matrix mult
     for(j in 1:dims[1]){
       ## TODO:: Discuss this...
       vector_op <- alpha[j, ] * X2[,,(i-1)] # X^2
-      Sigma[j,,i] <- delta[j,] + colSums(vector_op)/dims[1]#.approx_int(as.matrix(vector_op))
-
-      # vector_op <- alpha %*% X2[,,(i-1)] # X^2
-      # Sigma[j,,i] <- delta[j,] + colSums(vector_op)/dims[1]#.approx_int(as.matrix(vector_op))
-
-    #   vector_op <- alpha %*% X2[,,(i-1)] # X^2
-    #   Sigma[j,,i] <- delta[j,] + .approx_int(as.matrix(vector_op))
+      Sigma[j,,i] <- delta[j,] + dot_integrate_col(vector_op)
     }
   }
 
@@ -187,8 +124,8 @@
       vector_for_beta_op <- beta[j, ] * tmp  # X
 
       estimate[j,i] <- delta[j] +
-        .approx_int(as.matrix(vector_for_alpha_op)) +
-        .approx_int(as.matrix(vector_for_beta_op))
+        dot_integrate(as.matrix(vector_for_alpha_op)) +
+        dot_integrate(as.matrix(vector_for_beta_op))
     }
   }
 
@@ -211,8 +148,8 @@
       vector_for_beta_op <- beta[j, ] * tmp  # X
 
       estimate[j,i] <- delta[j] +
-        .approx_int(as.matrix(vector_for_alpha_op)) +
-        .approx_int(as.matrix(vector_for_beta_op))
+        dot_integrate(as.matrix(vector_for_alpha_op)) +
+        dot_integrate(as.matrix(vector_for_beta_op))
     }
   }
 
@@ -239,8 +176,7 @@
   estimate <- .predictGARCH(X,alpha,beta,delta,est_sqr=TRUE)
 
   for(i in 2:ncol(X)){
-    error[i] <- sqrt(.approx_int((sqrt(X[,i]) - estimate[,i])^2))
-    #error[i] <- sqrt(.approx_int(((X[,i]) - estimate[,i])^2))
+    error[i] <- sqrt(dot_integrate((sqrt(X[,i]) - estimate[,i])^2))
   }
 
   sum(error)
