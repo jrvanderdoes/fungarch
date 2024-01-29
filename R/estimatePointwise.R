@@ -10,6 +10,7 @@
 #' @param lambda (Optional) Numeric. Amount of tikhonov regularation. Default is
 #'  NA which uses optimazation to find the value. Alternatively many values can
 #'  be given and tested, or a single value just used as given value.
+#' @param training
 #'
 #' @return List of fit and some fitting parameters:
 #'  \enumerate{
@@ -60,11 +61,61 @@
 #' #             max(delta_true,est$hat_delta)),
 #' #      type='l')
 #' # lines(x=d,y=est$hat_delta, col='red')
-pointwiseARCH <- function(X, w=0.001, lambda=NA){
+pointwiseARCH <- function(X, w=0.001, lambda=NA, training=0.8){
   X <- X - rowMeans(X) # De-mean
   X <- X^2 # Pointwise square
-  N <- ncol(X) # Number of observations
   n <- nrow(X) # Resolution
+
+  ## USE PART OF DATA FOR FIT
+  if(training < 1){
+    X_part <- X[,1:(training * ncol(X))]
+    X_pred <- X[,(training * ncol(X)+1):ncol(X)]
+  }else{
+    X_part <- X
+    X_pred <- X
+  }
+  N <- ncol(X_part)
+
+  # Lag-h Covariance operator estimates
+  #   Formula (3.6)
+  C_0 <- .estim_lag_cov(X_part)
+  C_1 <- .estim_lag_cov(X_part, lag = 1)
+
+  eigval_C_0 <- eigen(C_0)
+
+  # Select K Projections
+  #   Remark 3.2(c)
+  K <- which.min(cumsum(eigval_C_0$values)/sum(eigval_C_0$values) < 1-w)
+
+  # Standardize Vectors in integral
+  #   apply( eigval_C_0$vectors^2,MARGIN = 2,dot_integrate)
+  eigval_C_0$vectors <- eigval_C_0$vectors * sqrt(n)
+
+  # Compute Projection
+  projector <- matrix(0, nrow=n, ncol=n)
+  for(i in 1:K){
+    projector <- projector +
+      ( eigval_C_0$vectors[,i] %*% t(eigval_C_0$vectors[,i]) )
+  }
+
+  # Define m2, (3.3)
+  m2 <- 1 / N * rowSums(X_part)
+
+  optim_results <-
+    optim(10000,function(lambda, X1, N, n, C_0, C_1, projector, m2){
+      ests <- .estimateARCH(N=N, n=n, C_0=C_0, C_1=C_1,
+                            lambda=lambda, projector=projector, m2=m2)
+
+      .computeARCHError(X = X1, alpha = ests$hat_alpha, delta = ests$hat_delta)
+    },
+    method="Brent",
+    lower=10^-7,upper=500000,
+    X1=X_pred,N=N,n=n,C_0=C_0,C_1=C_1,projector=projector,m2=m2)
+
+  lambda <- optim_results$par
+
+  ## USE ALL DATA FOR FINAL SETUP
+  N <- ncol(X) # Number of observations
 
   # Lag-h Covariance operator estimates
   #   Formula (3.6)
@@ -78,7 +129,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
   K <- which.min(cumsum(eigval_C_0$values)/sum(eigval_C_0$values) < 1-w)
 
   # Standardize Vectors in integral
-  #   apply( eigval_C_0$vectors^2,MARGIN = 2,.approx_int)
+  #   apply( eigval_C_0$vectors^2,MARGIN = 2,dot_integrate)
   eigval_C_0$vectors <- eigval_C_0$vectors * sqrt(n)
 
   # Compute Projection
@@ -87,34 +138,11 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
     projector <- projector +
       ( eigval_C_0$vectors[,i] %*% t(eigval_C_0$vectors[,i]) )
   }
-
   # Define m2, (3.3)
   m2 <- 1 / N * rowSums(X)
 
-  # Estimate alpha and delta
-  error_plot <- NULL
-  if(length(lambda)>1){
-    lambda_result <- .findLambdaARCH(lambda,X=X,C_0=C_0,C_1=C_1,#I_H=I_H, N=N,
-                                     projector=projector,m2=m2)
-    error_plot <- lambda_result$error_plot
-    lambda <- lambda_result$lambda
-  } else if(is.na(lambda)){
-    optim_results <-
-      optim(10000,function(lambda, X, N, n, C_0, C_1, projector, m2){
-        ests <- .estimateARCH(N=N, n=n, C_0=C_0, C_1=C_1,
-                              lambda=lambda, projector=projector, m2=m2)
-
-        .computeARCHError(X = X, alpha = ests$hat_alpha, delta = ests$hat_delta)
-      },
-      method="Brent",
-      lower=10^-7,upper=500000,
-      X=X,N=N,n=n,C_0=C_0,C_1=C_1,projector=projector,m2=m2)
-
-    lambda <- optim_results$par
-  }
-
   ests <- .estimateARCH(N=N, n=n, C_0=C_0, C_1=C_1,
-                lambda=lambda, projector=projector, m2=m2)
+                        lambda=lambda, projector=projector, m2=m2)
 
   list('hat_alpha'=ests$hat_alpha,
        'hat_delta'=ests$hat_delta,
@@ -124,8 +152,7 @@ pointwiseARCH <- function(X, w=0.001, lambda=NA){
                              'C_0'=C_0, 'C_1'=C_1,
                              'eigval_C_0'=eigval_C_0,
                              'K'=K,
-                             'projector'=projector,
-                             'error_plot'=error_plot))
+                             'projector'=projector))
 }
 
 
