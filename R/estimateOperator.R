@@ -9,29 +9,43 @@
 #' @export
 #'
 #' @examples
-operatorARCH <- function(X, w=0.001, theta=NA){
+operatorARCH <- function(X, w=0.001, theta=NA, training=0.8){
   tmp <- X - rowMeans(X) # De-mean
   X2 <- array(apply(tmp, 2, tcrossprod),
-             dim=c(nrow(tmp),nrow(tmp),ncol(tmp)))
+              dim=c(nrow(tmp),nrow(tmp),ncol(tmp)))
   #X2 <- apply(X2,3, function(XX){array(XX)})
 
-  N <- ncol(X)
+  ## USE PART OF DATA FOR FIT
+  if(training < 1){
+    X_part <- X[,1:(training * ncol(X))]
+    X_pred <- X[,(training * ncol(X)+1):ncol(X)]
+  }else{
+    X_part <- X
+    X_pred <- X
+  }
+  N <- ncol(X_part)
   n <- nrow(X)
+
+  tmp <- X_part - rowMeans(X_part) # De-mean
+  X2_part <- array(apply(tmp, 2, tcrossprod),
+                   dim=c(nrow(tmp),nrow(tmp),ncol(tmp)))
+  tmp <- X_pred - rowMeans(X_pred) # De-mean
+  X2_pred <- array(apply(tmp, 2, tcrossprod),
+                   dim=c(nrow(tmp),nrow(tmp),ncol(tmp)))
 
   eps <- .generateFunctionalIID(N,100)
 
   # C_eps
-  resolution <- nrow(X)
-  C_eps <- matrix(NA,resolution,resolution)
-  times <- 1:resolution/resolution
-  for (i in 1:resolution){
+  C_eps <- matrix(NA,n,n)
+  times <- 1:n/n
+  for (i in 1:n){
     C_eps[i,] <- exp(-times[i]/2-times/2) * pmin(exp(times[i]), exp(times))
   }
   #C_eps_long <- stack(data.frame(C_eps))$values
 
-  C_X <- rowMeans(X2,dims=2)
+  C_X <- rowMeans(X2_part,dims=2)
   # Define Y
-  Y <- Y_eps <- X2
+  Y <- Y_eps <- X2_part
   for(i in 1:N){
     Y[,,i] <- Y[,,i] - C_X
     Y_eps[,,i] <- Y[,,i] %*% C_eps
@@ -68,7 +82,7 @@ operatorARCH <- function(X, w=0.001, theta=NA){
   K1 <- which.min(cumsum(eigval_C_eps$values)/sum(eigval_C_eps$values) < 1-w)
 
   # Standardize Vectors in integral
-  #   apply( eigval_C_ZZe0$vectors^2,MARGIN = 2,.approx_int)
+  #   apply( eigval_C_ZZe0$vectors^2,MARGIN = 2,dot_integrate)
   eigval_C_ZZe0$vectors <- Re(eigval_C_ZZe0$vectors) * sqrt(n)
   eigval_C_eps$vectors <- Re(eigval_C_eps$vectors) * sqrt(sqrt(n))
 
@@ -92,7 +106,7 @@ operatorARCH <- function(X, w=0.001, theta=NA){
   error_plot <- NULL
   if(is.na(theta)){
     optim_results <-
-      optim(10000,function(theta, X, C_ZZe0, C_ZY1, projector, C_X,
+      optim(10000,function(theta, X1, C_ZZe0, C_ZY1, projector, C_X,
                            C_eps, projector_eps, n){
         ests <- .estimateARCH_tensor(
           C_ZZe0=C_ZZe0, C_ZY1=C_ZY1, theta=theta,
@@ -100,16 +114,69 @@ operatorARCH <- function(X, w=0.001, theta=NA){
           projector_eps=projector_eps, n=n)
 
         .computeARCHError_tensor_new(
-          X = X2, alpha = ests$hat_alpha, delta = ests$hat_delta,
+          X = X1, alpha = ests$hat_alpha, delta = ests$hat_delta,
           C_eps=C_eps)
       },
       method="Brent",
-      lower=10^-7,upper=500000,
-      X=X,C_ZZe0=C_ZZe0,C_ZY1=C_ZY1,projector=projector,
+      lower=10^-7,upper=500000000,
+      X1=Z,C_ZZe0=C_ZZe0,C_ZY1=C_ZY1,projector=projector,
       C_X=C_X, C_eps=C_eps, projector_eps=projector_eps, n=n)
 
     theta <- optim_results$par
   }
+
+
+  ## USE ALL DATA FOR FINAL SETUP
+  N <- ncol(X) # Number of observations
+
+  eps <- .generateFunctionalIID(N,100)
+  # C_eps
+  C_eps <- matrix(NA,n,n)
+  times <- 1:n/n
+  for (i in 1:n){
+    C_eps[i,] <- exp(-times[i]/2-times/2) * pmin(exp(times[i]), exp(times))
+  }
+
+  C_X <- rowMeans(X2,dims=2)
+
+  # Define Y
+  Y <- Y_eps <- X2
+  for(i in 1:N){
+    Y[,,i] <- Y[,,i] - C_X
+    Y_eps[,,i] <- Y[,,i] %*% C_eps
+  }
+  Z <- Y # stack(data.frame(Y))$values
+  Z_eps <- Y_eps
+
+  C_ZZe0 <- .estim_lag_cov_tensor(Z, Z_eps, lag=0)
+  C_ZY1 <- .estim_lag_cov_tensor(Z, Y, lag=1)
+
+  eigval_C_ZZe0 <- eigen(C_ZZe0)
+  eigval_C_eps <- eigen(C_eps)
+
+  # Select K Projections
+  #   Remark 3.2(c)
+  #   TODO:: Check Imaginary Size
+  K <- which.min(cumsum(eigval_C_ZZe0$values)/sum(eigval_C_ZZe0$values) < 1-w)
+  K1 <- which.min(cumsum(eigval_C_eps$values)/sum(eigval_C_eps$values) < 1-w)
+
+  # Standardize Vectors in integral
+  #   apply( eigval_C_ZZe0$vectors^2,MARGIN = 2,dot_integrate)
+  eigval_C_ZZe0$vectors <- Re(eigval_C_ZZe0$vectors) * sqrt(n)
+  eigval_C_eps$vectors <- Re(eigval_C_eps$vectors) * sqrt(sqrt(n))
+
+  # Compute Projection
+  projector <- projector_eps <-matrix(0, nrow=n, ncol=n)
+  # matrix(0, nrow=sqrt(n), ncol=sqrt(n))
+  for(i in 1:K){
+    projector <- projector +
+      ( eigval_C_ZZe0$vectors[,i] %*% t(eigval_C_ZZe0$vectors[,i]) )
+  }
+  for(i in 1:K1){
+    projector_eps <- projector_eps +
+      ( eigval_C_eps$vectors[,i] %*% t(eigval_C_eps$vectors[,i]) )
+  }
+
 
   ests <- .estimateARCH_tensor(
     C_ZZe0=C_ZZe0, C_ZY1=C_ZY1, theta=theta,
@@ -121,7 +188,7 @@ operatorARCH <- function(X, w=0.001, theta=NA){
        # 'estimate'=.predictARCH_tensor(X2=X, alpha=ests$hat_alpha,
        #                         delta=ests$hat_delta, est_sqr=FALSE),
        'error'=.computeARCHError_tensor_new(
-            X = Z, alpha = ests$hat_alpha, delta = ests$hat_delta, C_eps = C_eps),
+         X = Z, alpha = ests$hat_alpha, delta = ests$hat_delta, C_eps = C_eps),
        'fitting_params'=list('theta'=theta,
                              'C_ZZe0'=C_ZZe0, 'C_ZY1'=C_ZY1,
                              'eigval_C_ZZe0'=eigval_C_ZZe0,
