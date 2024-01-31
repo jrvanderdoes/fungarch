@@ -77,7 +77,7 @@ generateFunctionalCondVol <- function(resolution, N, type = 'garch',
                  ((sim_garch_matrix[,(j-1)])^2)
                # sigma^2 = delta + \int alpha(t,s) X(s) ds, X=y[,j-1]^2
                sim_sigma2_matrix[i,j] <- delta_par(times[i]) +
-                 .approx_int(as.matrix(vector_op))
+                 dot_integrate(as.matrix(vector_op))
              }
 
              # GARCH(1,0)/ARCH(1)
@@ -111,8 +111,8 @@ generateFunctionalCondVol <- function(resolution, N, type = 'garch',
                vector_for_beta_op <- beta_par(times[i], times) *
                  (sim_sigma2_matrix[,j-1])
                sim_sigma2_matrix[i,j] <- delta_par(times[i]) +
-                 .approx_int(as.matrix(vector_for_alpha_op)) +
-                 .approx_int(as.matrix(vector_for_beta_op))
+                 dot_integrate(as.matrix(vector_for_alpha_op)) +
+                 dot_integrate(as.matrix(vector_for_beta_op))
              }
 
              # GARCH(1,1)
@@ -202,19 +202,37 @@ generateFunctionalCondVol_ff <- function(resolution, N, type = 'arch',
 
            vector_op1 <- vector_op <-
              array(dim = c(resolution,resolution,resolution))
+           # Try For speed
+           vector_list <- list()
+           for(j in 1:resolution){
+             vector_list[[j]] <- list()
+             # Over all t
+             for(k in 1:resolution){
+               vector_list[[j]][[k]] <-
+                 as.matrix(
+                   sapply(times, alpha_par,
+                          s=times[j],t=times[k],u=times)
+                 )
+             }
+           }
+
            for(i in 2:NBurn){
              prev_tensor <- sim_garch_matrix[,i-1] %*% t(sim_garch_matrix[,i-1])
              for(j in 1:resolution){
                # Over all t
                for(k in 1:resolution){
-                 vector_op[,,k] <-
-                   as.matrix(
-                     sapply(times, alpha_par,
-                            s=times[j],t=times[k],u=times)
-                   ) %*% prev_tensor
+                 # vector_op[,,k] <-
+                 #   as.matrix(
+                 #     sapply(times, alpha_par,
+                 #            s=times[j],t=times[k],u=times)
+                 #   ) %*% prev_tensor
+                 vector_op[,,k] <- vector_list[[j]][[k]] %*% prev_tensor
                }
                # TODO:: Convert to trap int
                vector_op1[,,j] <- rowMeans(vector_op, dims=2)
+               # vector_op1_tmp[,,j] <- (vector_op[,,1] + vector_op[,,dim(vector_op)[3]] +
+               #           rowSums(2*vector_op[,,2:(dim(vector_op)[3]-1)],dims=2) ) /
+               #   (2*dim(vector_op)[3])
              }
              # Formula (2)
              #  delta + sum alpha(X2) + sum beta(Sigma2)
@@ -228,31 +246,6 @@ generateFunctionalCondVol_ff <- function(resolution, N, type = 'arch',
              # Formula (2)
              sim_garch_matrix[,i] <- Sigma2_sqrt %*% eps[,i]
            }
-
-
-
-           ## PREVIOUS
-           # for(j in 2:NBurn){
-           #   # TODO:: Change to matrix mult
-           #   for(j in 1:dims[1]){
-           #     vector_op <- alpha[j, ] * sim_garch_matrix[,i-1] # X^2
-           #     estimate[j,i] <- delta[j] + .approx_int(as.matrix(vector_op))
-           #   }
-           #   # Variance
-           #   tensor_vals <- sim_garch_matrix[,(j-1)] %*% t(sim_garch_matrix[,(j-1)])
-           #   for(i in 1:resolution){
-           #     for(k in 1:resolution){
-           #       vector_op <- sapply(times,alpha_par, u=times[i], v=times[k], s=times) %*% tensor_vals
-           #       # sigma^2 = delta + \int alpha(u,v,t,s) X(u)X(v) du dv, X=y[,j-1]
-           #       sim_sigma2_matrix[i,j] <- sim_sigma2_matrix[i,k,1] +
-           #         .approx_int(as.matrix(vector_op))
-           #     }
-           #   }
-           #
-           #   # GARCH(1,0)/ARCH(1)
-           #   sim_garch_matrix[,j] <- sqrt(sim_sigma2_matrix[,j]) *
-           #     error_matrix[,j]
-           # }
          },
          # garch = {
          #   NBurn <- burnin + N
