@@ -34,10 +34,10 @@ compare_methods_pointwise <- function(result_pw, result_or, X_est1){
   for(i in 2:ncol(X_est)){
     # TODO: Check integration
     error[i,] <- c(
-      .approx_int(abs(X2[,i] - estimate_pwor[,i])),
-      .approx_int(abs(X2[,i] - estimate_pw[,i])),
-      .approx_int(abs(X2[,i] - rowMeans(X2))),
-      .approx_int(abs(X2[,i] - X2[,i-1]))
+      dot_integrate(abs(X2[,i] - estimate_pwor[,i])),
+      dot_integrate(abs(X2[,i] - estimate_pw[,i])),
+      dot_integrate(abs(X2[,i] - rowMeans(X2))),
+      dot_integrate(abs(X2[,i] - X2[,i-1]))
     )
   }
 
@@ -73,7 +73,7 @@ pointwise_next_step_ests <- function(X2, alpha, delta){
     # TODO:: Change to matrix mult
     for(j in 1:nrow(X2)){
       vector_op <- alpha[j, ] * X2[,(i-1)] # X^2
-      estimate[j,i] <- delta[j] + .approx_int(as.matrix(vector_op))
+      estimate[j,i] <- delta[j] + dot_integrate(as.matrix(vector_op))
     }
   }
 
@@ -232,12 +232,11 @@ compare_methods_operator <- function(result_pw, result_op, result_opor, X_est1){
                       'Prev'=0)
   for(i in 2:ncol(X_est)){
     error[i-1,] <- c(
-      .approx_int(abs(X2[,,i] - estimate_or[,,i])), # OR
-      .approx_int(abs(X2[,,i] - estimate_op[,,i])), # OP
-      .approx_int(abs(X2[,,i] - estimate_pw_op[,,i])), # PW
-      #.approx_int(abs(X2[,,i] - estimate_pw_op1[,,i])), # PW1
-      .approx_int(abs(X2[,,i] - rowMeans(X2,dims = 2))), # Mean
-      .approx_int(abs(X2[,,i] - X2[,,i-1])) # Prev
+      dot_integrate(abs(X2[,,i] - estimate_or[,,i])), # OR
+      dot_integrate(abs(X2[,,i] - estimate_op[,,i])), # OP
+      dot_integrate(abs(X2[,,i] - estimate_pw_op[,,i])), # PW
+      dot_integrate(abs(X2[,,i] - rowMeans(X2,dims = 2))), # Mean
+      dot_integrate(abs(X2[,,i] - X2[,,i-1])) # Prev
     )
   }
 
