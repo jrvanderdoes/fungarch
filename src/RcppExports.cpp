@@ -41,6 +41,41 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// compute_sigma_inp_k_pq_cpp
+double compute_sigma_inp_k_pq_cpp(unsigned int k, arma::mat d, arma::mat As, arma::mat Bs, arma::mat prev_ys, arma::mat prev_sigmas, unsigned int p, unsigned int q, int M);
+RcppExport SEXP _fungarch_compute_sigma_inp_k_pq_cpp(SEXP kSEXP, SEXP dSEXP, SEXP AsSEXP, SEXP BsSEXP, SEXP prev_ysSEXP, SEXP prev_sigmasSEXP, SEXP pSEXP, SEXP qSEXP, SEXP MSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< unsigned int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type d(dSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type As(AsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Bs(BsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type prev_ys(prev_ysSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type prev_sigmas(prev_sigmasSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type q(qSEXP);
+    Rcpp::traits::input_parameter< int >::type M(MSEXP);
+    rcpp_result_gen = Rcpp::wrap(compute_sigma_inp_k_pq_cpp(k, d, As, Bs, prev_ys, prev_sigmas, p, q, M));
+    return rcpp_result_gen;
+END_RCPP
+}
+// obj_fn_pq_cpp
+double obj_fn_pq_cpp(arma::mat d, arma::mat As, arma::mat Bs, arma::mat ysq, unsigned int p, unsigned int q);
+RcppExport SEXP _fungarch_obj_fn_pq_cpp(SEXP dSEXP, SEXP AsSEXP, SEXP BsSEXP, SEXP ysqSEXP, SEXP pSEXP, SEXP qSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type d(dSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type As(AsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Bs(BsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type ysq(ysqSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(obj_fn_pq_cpp(d, As, Bs, ysq, p, q));
+    return rcpp_result_gen;
+END_RCPP
+}
 // dot_integrate
 double dot_integrate(NumericVector v);
 RcppExport SEXP _fungarch_dot_integrate(SEXP vSEXP) {
@@ -67,6 +102,8 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_fungarch_compute_sigma_inp_k_q_cpp", (DL_FUNC) &_fungarch_compute_sigma_inp_k_q_cpp, 6},
     {"_fungarch_obj_fn_q_cpp", (DL_FUNC) &_fungarch_obj_fn_q_cpp, 4},
+    {"_fungarch_compute_sigma_inp_k_pq_cpp", (DL_FUNC) &_fungarch_compute_sigma_inp_k_pq_cpp, 9},
+    {"_fungarch_obj_fn_pq_cpp", (DL_FUNC) &_fungarch_obj_fn_pq_cpp, 6},
     {"_fungarch_dot_integrate", (DL_FUNC) &_fungarch_dot_integrate, 1},
     {"_fungarch_dot_integrate_col", (DL_FUNC) &_fungarch_dot_integrate_col, 1},
     {NULL, NULL, 0}

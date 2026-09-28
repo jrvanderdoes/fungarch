@@ -1,4 +1,4 @@
-nSims <- 500
+nSims <- 100
 
 results_oneStep <- results_fromLast <-
   data.frame('OR'=rep(NA,nSims),'PW'=NA, 'OP'=NA,
@@ -9,14 +9,9 @@ set.seed(123456789)
 for(i in 1:nSims){
   cat(paste0(i,', '))
 
-  # tmp <- suppressMessages(
-  #   generateFitComparePWARCH(N_fit = 500, N_pred = 250,
-  #                            alpha = function(t,s){ 12 * t * (1-t) * s * (1-s) },
-  #                            delta = function(t){ rep(0.5,length(t)) })
-  # )
   tmp <- suppressMessages(
     generateFitComparePWARCH(N_fit = 500, N_pred = 250,
-                             alpha = function(t,s){ (1-cos(2*pi*t)^2) * (1-cos(2*pi*s)^2) },
+                             alpha = function(t,s){ 20 * t * (1-t) * s * (1-s) },
                              delta = function(t){ rep(0.5,length(t)) })
   )
 
@@ -26,15 +21,22 @@ for(i in 1:nSims){
 #         'C://Users//jerem//Downloads//ShowFigures//pw_onestep.rds')
 
 
-colMeans(results_oneStep)
+colMeans(results_oneStep, na.rm=T)
 #   OR       PW       OP      MLE     Mean     Prev
-# 188.1037 190.0013 179.4277 188.4361 196.9432 223.4342
+# t(1-t)s(1-s)
+# 4.419488 4.499896 5.211625 4.441921 4.761606 5.146680
+# (1-cos(2pi t)^2)(1-cos(2pi s)^2)
+# 169.2658 171.9417 12359.9025 170.3583 175.1066 205.3207
 table(apply(results_oneStep,1,function(x){which.min(x)}))
 #   OR       PW       OP      MLE     Mean     Prev
-#   12       28       428     30      2         0
+#   19       2        463     16      0         0
+#   263      68       0       145     24        0
 rowMeans(apply(results_oneStep,1,function(x){rank(x)}))
 #   OR    PW    OP   MLE  Mean  Prev
-#  2.914 3.272 1.344 2.754 4.742 5.974
+#  2.824 3.352 1.266 2.892 4.850 5.816
+#  1.886 2.540 5.998 2.126 3.456 4.994
+
+#######################################################################
 
 # results_oneStep
 library(tidyverse)

@@ -9,6 +9,14 @@ obj_fn_q_cpp <- function(d, As, ysq, q) {
     .Call(`_fungarch_obj_fn_q_cpp`, d, As, ysq, q)
 }
 
+compute_sigma_inp_k_pq_cpp <- function(k, d, As, Bs, prev_ys, prev_sigmas, p, q, M) {
+    .Call(`_fungarch_compute_sigma_inp_k_pq_cpp`, k, d, As, Bs, prev_ys, prev_sigmas, p, q, M)
+}
+
+obj_fn_pq_cpp <- function(d, As, Bs, ysq, p, q) {
+    .Call(`_fungarch_obj_fn_pq_cpp`, d, As, Bs, ysq, p, q)
+}
+
 dot_integrate <- function(v) {
     .Call(`_fungarch_dot_integrate`, v)
 }
