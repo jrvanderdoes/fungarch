@@ -1,18 +1,24 @@
 Package: fungarch
-Title: Functional Data GARCH Estimation
+Title: Functional GARCH Models
 Version: 0.0.0.9000
 Authors@R: 
     person("Jeremy", "VanderDoes", , "jeremy.vanderdoes@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0001-9885-3073"))
-Description: What the package does (one paragraph).
+Description: Tools for simulating, estimating, and forecasting functional
+    generalized autoregressive conditional heteroskedasticity (GARCH) models.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3
 Imports: 
-    cpp11,
+    dplyr,
+    fChange,
+    lubridate,
     MASS,
-    Rcpp (>= 1.0.10),
-    Rfast
-LinkingTo: Rcpp, RcppArmadillo
+    tidyr
+Suggests:
+    testthat (>= 3.0.0)
+Depends: 
+    R (>= 3.5)
+LazyData: true
