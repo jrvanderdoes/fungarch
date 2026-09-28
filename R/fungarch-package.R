@@ -1,10 +1,7 @@
-## usethis namespace: start
-#' @useDynLib fungarch, .registration = TRUE
-## usethis namespace: end
-NULL
-
-## usethis namespace: start
-#' @importFrom Rcpp sourceCpp
-#' @importFrom Rcpp evalCpp
-## usethis namespace: end
-NULL
+#' fungarch: Functional GARCH Models
+#'
+#' Tools for simulating, estimating, and forecasting functional GARCH models.
+#'
+#' @docType package
+#' @name fungarch-package
+"_PACKAGE"
