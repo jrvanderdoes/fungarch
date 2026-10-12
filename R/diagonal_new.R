@@ -198,7 +198,7 @@
     }
   }
 
-  M_mean <- rowMeans(M,dim=2)
+  M_mean <- rowMeans(M, dims = 2)
   for(i in 1:N){
     M[,,i] <- M[,,i] - M_mean
   }
@@ -219,7 +219,14 @@
       # X^X2_eps
       X_M[,i] <- diag(M[,,i] %*% C_eps_dagM)
     }else{
-      X_Mp[,i] <- M[i]
+      # OLD: X_Mp[,i] <- M[i]
+      # The old assignment recycled the current scalar into every lag slot
+      # when p > 1, forcing all estimated lag coefficients to be identical.
+      X_Mp[,i] <- vapply(seq_len(p), function(idx){
+        lag_index <- i - idx + 1L
+        if(lag_index <= 0L) return(NA_real_)
+        M[1L, 1L, lag_index]
+      }, numeric(1))
 
       # X^X2_eps
       X_M[,i] <- diag(M[i] %*% C_eps_dagM)

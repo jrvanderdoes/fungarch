@@ -1,5 +1,10 @@
 .Rproj.user/
 .Rhistory
+.RData
+.Ruserdata
 node_modules/
 package-lock.json
 data-raw/.dukascopy-cache/
+..Rcheck/
+*.Rcheck/
+*.tar.gz

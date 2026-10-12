@@ -1,2 +1,11 @@
 ^fungarch\.Rproj$
 ^\.Rproj\.user$
+^LICENSE\.md$
+^node_modules$
+^paper$
+^data-raw$
+^\.Rhistory$
+^\.RData$
+^\.Ruserdata$
+^\.git$
+^\.gitignore$

@@ -4,4 +4,5 @@
 #'
 #' @docType package
 #' @name fungarch-package
+#' @importFrom stats optim qnorm quantile sd
 "_PACKAGE"

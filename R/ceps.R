@@ -9,7 +9,7 @@
 #' @return Matrix with OU covariance.
 #'
 #' @example
-#' fgarch::.generate_ceps(10)
+#' fungarch:::.generate_ceps(10)
 #'
 #' @noRd
 .generate_ceps <- function(n, denom=2){

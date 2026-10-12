@@ -2,23 +2,30 @@ Package: fungarch
 Title: Functional GARCH Models
 Version: 0.0.0.9000
 Authors@R: 
-    person("Jeremy", "VanderDoes", , "jeremy.vanderdoes@gmail.com", role = c("aut", "cre"),
+    person("Jeremy", "VanderDoes", , "Jeremy.VanderDoes@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0001-9885-3073"))
+Author: Jeremy VanderDoes [aut, cre]
+Maintainer: Jeremy VanderDoes <Jeremy.VanderDoes@gmail.com>
 Description: Tools for simulating, estimating, and forecasting functional
     generalized autoregressive conditional heteroskedasticity (GARCH) models.
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports: 
     dplyr,
     fChange,
-    lubridate,
+    ggplot2,
     MASS,
+    plotly,
+    RColorBrewer,
+    scales,
     tidyr
 Suggests:
+    future,
+    future.apply,
+    reticulate,
     testthat (>= 3.0.0)
 Depends: 
-    R (>= 3.5)
+    R (>= 4.1)
 LazyData: true

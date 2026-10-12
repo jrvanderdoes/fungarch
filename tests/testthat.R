@@ -1,4 +1,4 @@
 library(testthat)
-library(fgarch)
+library(fungarch)
 
-test_check("fgarch")
+test_check("fungarch")
