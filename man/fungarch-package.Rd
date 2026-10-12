@@ -9,6 +9,6 @@
 Tools for simulating, estimating, and forecasting functional GARCH models.
 }
 \author{
-\strong{Maintainer}: Jeremy VanderDoes \email{jeremy.vanderdoes@gmail.com} (\href{https://orcid.org/0009-0001-9885-3073}{ORCID})
+\strong{Maintainer}: Jeremy VanderDoes \email{Jeremy.VanderDoes@gmail.com} (\href{https://orcid.org/0009-0001-9885-3073}{ORCID})
 
 }
