@@ -118,29 +118,44 @@ compare_convergence <- function(
     result
   }
 
-  alpha_error <- function(true_alpha, fitted_alpha, fitted_basis, fit_p) {
+  alpha_error <- function(true_alpha, fitted_alpha, fitted_basis, fit_p,
+                          compare_p = if (is.list(true_alpha)) {
+                            length(true_alpha)
+                          } else {
+                            1L
+                          }) {
+    # The paper defines e_{N, alpha} as the mean of the lag-specific
+    # relative errors.  For ARCH(1) this deliberately compares only alpha_1,
+    # even when the fitted model has p = 5.  For ARCH(5), all five lags are
+    # compared; an ARCH(1) fit has zero estimates for the omitted lags.
     true_list <- if (is.list(true_alpha)) true_alpha else list(true_alpha)
-    fit_list <- lapply(seq_len(fit_p), function(i) {
-      build_alpha_operator(fitted_alpha, fitted_basis, i)
-    })
-    n_compare <- max(length(true_list), length(fit_list))
-    l2 <- abs_err <- denom <- vector("list", n_compare)
-
-    for (i in seq_len(n_compare)) {
-      truth <- if (i <= length(true_list)) true_list[[i]] else
-        matrix(0, nrow = resolution^2, ncol = resolution^2)
-      estimate <- if (i <= length(fit_list)) fit_list[[i]] else
-        matrix(0, nrow = resolution^2, ncol = resolution^2)
-      l2[[i]] <- pmin((truth - estimate)^2, (truth + estimate)^2)
-      abs_err[[i]] <- pmin(abs(truth - estimate), abs(truth + estimate))
-      denom[[i]] <- abs(truth)
+    if (compare_p < 1L || compare_p > length(true_list)) {
+      stop("compare_p must be between 1 and the number of true alpha lags.")
     }
 
+    zero_alpha <- matrix(0, nrow = resolution^2, ncol = resolution^2)
+    lag_errors <- lapply(seq_len(compare_p), function(i) {
+      truth <- true_list[[i]]
+      estimate <- if (i <= fit_p) {
+        build_alpha_operator(fitted_alpha, fitted_basis, i)
+      } else {
+        zero_alpha
+      }
+      signed_difference <- pmin(truth - estimate, truth + estimate)
+      absolute_difference <- pmin(abs(truth - estimate),
+                                  abs(truth + estimate))
+      list(
+        L2 = fChange:::dot_integrate(signed_difference^2),
+        Abs = fChange:::dot_integrate(absolute_difference),
+        Rel = fChange:::dot_integrate(absolute_difference) /
+          fChange:::dot_integrate(abs(truth))
+      )
+    })
+
     list(
-      L2 = fChange:::dot_integrate(Reduce("+", l2)),
-      Abs = fChange:::dot_integrate(Reduce("+", abs_err)),
-      Rel = fChange:::dot_integrate(Reduce("+", abs_err)) /
-        fChange:::dot_integrate(Reduce("+", denom))
+      L2 = mean(vapply(lag_errors, `[[`, numeric(1), "L2")),
+      Abs = mean(vapply(lag_errors, `[[`, numeric(1), "Abs")),
+      Rel = mean(vapply(lag_errors, `[[`, numeric(1), "Rel"))
     )
   }
 
@@ -165,8 +180,13 @@ compare_convergence <- function(
       )
 
       if (parameter == "alpha") {
-        err1 <- alpha_error(alpha, diag_mod$alpha, basis, fit_p = 1)
-        err5 <- alpha_error(alpha, diag_mod5$alpha, basis, fit_p = 5)
+        # p is the lag order of the data-generating process.  For ARCH(1),
+        # compare only the first alpha term for both fitted models.  For
+        # ARCH(5), compare all five terms as in the paper's definition.
+        err1 <- alpha_error(alpha, diag_mod$alpha, basis, fit_p = 1,
+                            compare_p = p)
+        err5 <- alpha_error(alpha, diag_mod5$alpha, basis, fit_p = 5,
+                            compare_p = p)
       } else {
         err1_values <- pmin(
           (delta - diag_mod$delta)^2,

@@ -6,7 +6,10 @@ dir.create("./paper/figs", recursive = TRUE, showWarnings = FALSE)
 # historical run unless the same seed and settings are restored there.
 set.seed(123)
 
-ncores <- max(1L, parallel::detectCores(logical = TRUE) - 1L)
+# Keep the worker count bounded because each future currently carries large
+# simulation objects. More workers can increase memory pressure and slow the
+# overall run through worker failures or paging.
+ncores <- min(5L, max(1L, parallel::detectCores(logical = TRUE) - 1L))
 checkpoint_dir <- "./paper/figs/convergence_checkpoints"
 
 plot_convergence <- function(result, file) {
@@ -50,7 +53,7 @@ results_A1 <- compare_convergence(
   ap_amt = 1,
   p = 1,
   parallel = TRUE,
-  ncores = ncores,
+  ncores = 5,
   checkpoint_dir = checkpoint_dir
 )
 print(results_A1$Rel)

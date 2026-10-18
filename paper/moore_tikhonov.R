@@ -173,7 +173,8 @@ run_moore_tikhonov_study <- function(
     silent = FALSE,
     parallel = FALSE,
     ncores = min(4L, max(1L, parallel::detectCores(logical = TRUE) - 1L)),
-    checkpoint_file = NULL) {
+    checkpoint_file = NULL,
+    resume = TRUE) {
   if (!is.null(seed)) set.seed(seed)
 
   if (!is.logical(parallel) || length(parallel) != 1) {
@@ -182,6 +183,9 @@ run_moore_tikhonov_study <- function(
   if (!is.numeric(ncores) || length(ncores) != 1 ||
       ncores != as.integer(ncores) || ncores < 1) {
     stop("ncores must be one positive integer.", call. = FALSE)
+  }
+  if (!is.logical(resume) || length(resume) != 1 || is.na(resume)) {
+    stop("resume must be TRUE or FALSE.", call. = FALSE)
   }
   if (parallel) {
     if (!requireNamespace("future", quietly = TRUE) ||
@@ -198,7 +202,50 @@ run_moore_tikhonov_study <- function(
     dimnames = list(as.character(sizes), c("Moore-Penrose", "Tikhonov"))
   )
 
+  # Checkpoints are written after each completed data length.  Restore only
+  # compatible completed rows; the per-size seed below ensures that resumed
+  # and uninterrupted runs generate the same simulations.
+  if (resume && !is.null(checkpoint_file) &&
+      file.exists(checkpoint_file)) {
+    checkpoint <- readRDS(checkpoint_file)
+    required_fields <- c("result", "completed_sizes", "nSims",
+                         "resolution", "alpha_scale", "w")
+    if (!all(required_fields %in% names(checkpoint))) {
+      stop("Checkpoint is missing required study settings.", call. = FALSE)
+    }
+    same <- function(x, y) isTRUE(all.equal(x, y, check.attributes = FALSE))
+    if (!same(checkpoint$nSims, nSims) ||
+        !same(checkpoint$resolution, resolution) ||
+        !same(checkpoint$alpha_scale, alpha_scale) ||
+        !same(checkpoint$w, w)) {
+      stop("Checkpoint settings do not match the requested study.",
+           call. = FALSE)
+    }
+
+    completed_sizes <- as.numeric(checkpoint$completed_sizes)
+    if (anyNA(completed_sizes) || any(!completed_sizes %in% sizes)) {
+      stop("Checkpoint contains data lengths not present in `sizes`.",
+           call. = FALSE)
+    }
+    if (nrow(checkpoint$result) != length(completed_sizes) ||
+        ncol(checkpoint$result) != ncol(result)) {
+      stop("Checkpoint result dimensions do not match completed sizes.",
+           call. = FALSE)
+    }
+
+    result[match(completed_sizes, sizes), ] <- checkpoint$result
+    if (!silent) {
+      cat("Resuming from checkpoint; completed sizes: ",
+          paste(completed_sizes, collapse = ", "), "\n", sep = "")
+    }
+  }
+
   for (i in seq_along(sizes)) {
+    if (all(!is.na(result[i, ]))) {
+      if (!silent) cat("Skipping completed ", sizes[i], "\n", sep = "")
+      next
+    }
+
     # Derive a stable stream from the sample size. This makes a given N
     # reproducible whether it is run alone or as part of the full study.
     seed_for_size <- if (is.null(seed)) {
@@ -244,7 +291,8 @@ run_moore_tikhonov_study <- function(
         list(result = result[seq_len(i), , drop = FALSE],
              completed_sizes = sizes[seq_len(i)],
              nSims = nSims, resolution = resolution,
-             alpha_scale = alpha_scale, w = w),
+             alpha_scale = alpha_scale, w = w, seed = seed,
+             sizes = sizes),
         checkpoint_file
       )
     }
