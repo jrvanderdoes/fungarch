@@ -148,8 +148,11 @@ run_one_moore_tikhonov_simulation <- function(
     alpha_scale,
     N_fit,
     w,
+    setup = NULL,
     silent = TRUE) {
-  setup <- prepare_moore_tikhonov(resolution, alpha_scale)
+  if (is.null(setup)) {
+    setup <- prepare_moore_tikhonov(resolution, alpha_scale)
+  }
   errors <- compare_models_moore_tikhonov(
     N = N,
     resolution = resolution,
@@ -201,6 +204,10 @@ run_moore_tikhonov_study <- function(
     NA_real_, nrow = length(sizes), ncol = 2,
     dimnames = list(as.character(sizes), c("Moore-Penrose", "Tikhonov"))
   )
+
+  # This setup depends only on the study settings, not on N or the
+  # simulation replicate. Build it once and reuse it everywhere.
+  setup <- prepare_moore_tikhonov(resolution, alpha_scale)
 
   # Checkpoints are written after each completed data length.  Restore only
   # compatible completed rows; the per-size seed below ensures that resumed
@@ -264,6 +271,7 @@ run_moore_tikhonov_study <- function(
         alpha_scale = alpha_scale,
         N_fit = sizes[i] - N_fit_offset,
         w = w,
+        setup = setup,
         silent = TRUE,
         future.seed = if (is.null(seed_for_size)) FALSE else seed_for_size
       )
@@ -277,6 +285,7 @@ run_moore_tikhonov_study <- function(
         alpha_scale = alpha_scale,
         N_fit = sizes[i] - N_fit_offset,
         w = w,
+        setup = setup,
         silent = TRUE
       )
     }
