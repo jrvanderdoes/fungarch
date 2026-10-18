@@ -23,6 +23,23 @@ python_path <- Sys.getenv("RETICULATE_PYTHON")
 if (nzchar(python_path)) {
   reticulate::use_python(python_path, required = TRUE)
 }
+
+# Kaleido inherits an invalid stdout handle from RStudio on Windows when it
+# launches Chrome through reticulate. Redirecting that stream avoids WinError 6.
+reticulate::py_run_string(
+  paste(
+    "import subprocess",
+    "if not getattr(subprocess.Popen, '_fungarch_stdout_patch', False):",
+    "    _fungarch_popen_init = subprocess.Popen.__init__",
+    "    def _fungarch_safe_popen(self, *args, **kwargs):",
+    "        if kwargs.get('stdout') is None:",
+    "            kwargs['stdout'] = subprocess.DEVNULL",
+    "        return _fungarch_popen_init(self, *args, **kwargs)",
+    "    subprocess.Popen.__init__ = _fungarch_safe_popen",
+    "    subprocess.Popen._fungarch_stdout_patch = True",
+    sep = "\n"
+  )
+)
 # pip install --upgrade "kaleido==0.1.*"
 # ? pip install plotly==5.3.1
 # Also try pip install kaleido==0.2.1
